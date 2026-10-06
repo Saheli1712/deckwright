@@ -1,0 +1,1334 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Deckwright</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a product website. Single committed dark look (deep navy throughout), so no light variant. */
+:root{
+  --bg:#0A1230; --bg-2:#0D1739; --surface:#111C42; --surface-2:#16224F; --sunk:#0C1536; --ink:#EEF2FF; --muted:#A5B1D6; --line:rgba(150,172,255,.16); --line-strong:rgba(150,172,255,.30);
+  --brand:#5B7CFF; --brand-hover:#7390FF; --brand-ink:#FFFFFF; --brand-soft:rgba(91,124,255,.16);
+  --hero:#081028; --hero-2:#0E1A45; --hero-ink:#F1F4FF; --hero-muted:#AEB9DA; --hero-line:rgba(255,255,255,.06);
+  --amber:#F4B13A; --amber-ink:#2B1D02; --ok:#4FD39A; --danger:#FF8A94;
+  --shadow:0 1px 0 rgba(255,255,255,.04) inset,0 18px 40px rgba(2,6,23,.45);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+/* Layout (orig): a product website. Deep navy hero holds the create form with an examples rail beside it; the light section below is where the finished deck and the assistant live. */
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:radial-gradient(1200px 600px at 85% -10%,rgba(91,124,255,.18),transparent 60%),var(--bg);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+button,select,textarea,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:24px}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--hero);border-bottom:1px solid var(--hero-line)}
+.nav-in{display:flex;align-items:center;gap:24px;height:62px}
+.logo{display:flex;align-items:center;gap:10px;color:var(--hero-ink);text-decoration:none;font:800 20px/1 var(--display);letter-spacing:-.01em}
+.logo svg{flex:none}
+.nav-links{margin-left:auto;display:flex;align-items:center;gap:6px}
+.nav-link{border:0;background:none;color:var(--hero-muted);font-size:14px;font-weight:500;padding:8px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.nav-link:hover{color:var(--hero-ink);background:rgba(255,255,255,.07)}
+.nav-sep{width:1px;height:22px;background:var(--hero-line);margin-inline:6px}
+
+/* hero */
+.hero{background:
+  linear-gradient(var(--hero-line) 1px,transparent 1px) 0 0/48px 48px,
+  linear-gradient(90deg,var(--hero-line) 1px,transparent 1px) 0 0/48px 48px,
+  linear-gradient(180deg,var(--hero) 0%,var(--hero-2) 100%);
+  color:var(--hero-ink);padding-block:52px 64px}
+.hero-copy{max-width:760px;margin-bottom:34px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.hero h1{font-size:clamp(30px,4.4vw,50px);line-height:1.06;font-weight:800;letter-spacing:-.02em}
+.lede{color:var(--hero-muted);font-size:17px;max-width:62ch;margin:16px 0 0}
+.create-grid{display:grid;grid-template-columns:minmax(0,1fr);max-width:920px}
+
+.panel{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015)),var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.create{padding:28px;display:flex;flex-direction:column;gap:26px}
+.field{display:flex;flex-direction:column;gap:10px}
+.label-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.label-row label,.label-row .lbl{display:flex;align-items:center;gap:10px;font:700 17px/1.2 var(--display)}
+.step{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font:600 13px/1 var(--mono)}
+.opt{font-size:12.5px;color:var(--muted)}
+textarea{width:100%;resize:vertical;border:1px solid var(--line-strong);border-radius:12px;background:var(--sunk);color:var(--ink);box-shadow:inset 0 1px 3px rgba(0,0,0,.35);padding:14px 16px;line-height:1.5;font-size:15.5px;transition:border-color .15s,box-shadow .15s}
+textarea:hover{border-color:rgba(150,172,255,.5)}
+textarea::placeholder{color:rgba(165,177,214,.7)}
+textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
+#prompt{min-height:150px}
+.field-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:30px 16px;border:1.5px dashed rgba(120,150,255,.45);border-radius:14px;background:radial-gradient(400px 160px at 50% 0%,rgba(91,124,255,.14),transparent 70%),var(--sunk);cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.drag{border-color:var(--brand);background:var(--brand-soft)}
+.drop .ic{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#5B7CFF,#3A55D8);display:grid;place-items:center;color:#fff;margin-bottom:6px;box-shadow:0 8px 20px rgba(58,85,216,.45)}
+.drop strong{font-weight:600;font-size:15px}
+.drop strong u{color:var(--brand);text-underline-offset:3px}
+.drop span{font-size:12.5px;color:var(--muted)}
+.files{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.file{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+.ftype{font:600 10.5px/1 var(--mono);letter-spacing:.04em;padding:7px 6px;border-radius:6px;background:var(--brand-soft);color:var(--brand);min-width:44px;text-align:center}
+.fname{min-width:0}
+.fname b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fname small{color:var(--muted);font-size:12.5px}
+.file.warn .fname small{color:var(--danger)}
+.file button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:4px 8px;border-radius:6px}
+.file button:hover{background:var(--surface-2);color:var(--ink)}
+
+.settings{display:grid;gap:14px}
+.set{display:grid;grid-template-columns:70px minmax(0,1fr);align-items:start;gap:12px}
+.set-l{padding-top:7px}
+.set-l{font-size:13.5px;color:var(--muted);font-weight:500}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border:1px solid var(--line-strong);border-radius:999px;font-size:13.5px;cursor:pointer;background:var(--sunk);transition:all .12s}
+.seg span:hover{border-color:var(--brand)}
+.seg input:checked+span{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.seg input:focus-visible+span{outline:2px solid var(--brand);outline-offset:2px}
+.seg i{width:11px;height:11px;border-radius:50%;display:inline-block;box-shadow:0 0 0 1.5px rgba(255,255,255,.7)}
+.cta-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:20px}
+.fine{margin:0;font-size:13px;color:var(--muted);max-width:44ch}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink);border-radius:10px;padding:9px 15px;cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap;transition:background .12s,border-color .12s}
+.btn:hover{border-color:var(--brand)}
+.btn.primary{background:linear-gradient(180deg,#6A88FF,#4A69F0);border-color:#5B7CFF;color:#fff;box-shadow:0 8px 22px rgba(74,105,240,.35)}
+.btn.primary:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
+.btn.lg{padding:13px 24px;font-size:15.5px;border-radius:12px}
+.btn.on-dark{background:transparent;border-color:rgba(255,255,255,.22);color:var(--hero-ink)}
+.btn.on-dark:hover{border-color:var(--hero-ink)}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.spin{width:15px;height:15px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* examples rail */
+.linkish{border:0;background:none;padding:0;color:var(--brand);font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet-head{position:sticky;top:0;z-index:2;background:var(--hero);color:var(--hero-ink);padding-top:env(safe-area-inset-top,0px);border-bottom:1px solid var(--hero-line)}
+.sheet-head-in{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding-block:16px}
+.sheet-head h2{font-size:22px}
+.sheet-head .tag{margin-bottom:6px}
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,.07);padding:4px;border-radius:10px;margin-left:auto}
+.tabs button{border:0;background:none;color:var(--hero-muted);padding:8px 14px;border-radius:7px;font-weight:600;font-size:14px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)}
+.sheet-body{padding-block:28px 56px}
+.sheet-note{margin:0 0 20px;color:var(--muted);max-width:70ch}
+.ex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px}
+.sheet .tips{margin-top:28px;max-width:640px}
+.empty-slides{grid-column:1/-1;border:1.5px dashed var(--line-strong);border-radius:14px;padding:48px 24px;text-align:center;color:var(--muted);background:var(--surface)}
+.empty-slides h3{color:var(--ink);font-size:18px;margin-bottom:6px}
+.tag{display:inline-block;align-self:flex-start;background:var(--amber);color:var(--amber-ink);font:600 10.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:5px 7px;border-radius:5px}
+.ex-head{display:flex;flex-direction:column;gap:8px}
+.ex-head h2{font-size:20px}
+.ex-head p{margin:0;font-size:13.5px;color:var(--muted)}
+.ex-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.ex-list button{width:100%;text-align:left;display:flex;flex-direction:column;gap:6px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--sunk);color:var(--ink);cursor:pointer;transition:border-color .12s,background .12s}
+.ex-list button:hover{border-color:var(--brand);background:var(--surface)}
+.ex-kind{font:600 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--brand)}
+.ex-text{font-size:14px;line-height:1.45}
+.ex-use{font-size:12.5px;color:var(--muted);font-weight:500}
+.ex-list button:hover .ex-use{color:var(--brand)}
+.tips{border-top:1px solid var(--line);padding-top:16px}
+.ex-list.ex-grid button{height:100%;background:var(--surface)}
+.ex-list button:hover{background:var(--surface-2)}
+.tips h3{font-size:15px;margin-bottom:8px}
+.tips ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+
+/* results */
+.results{padding-block:48px 64px;background:linear-gradient(180deg,var(--bg-2),var(--bg));border-top:1px solid var(--line)}
+.res-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:20px}
+.res-head .t{min-width:0;flex:1 1 320px}
+.res-head .eyebrow{color:var(--brand);display:flex;align-items:center;gap:10px}
+.res-head h2{font-size:clamp(24px,3vw,32px);line-height:1.15;letter-spacing:-.01em;overflow-wrap:anywhere}
+.meta{margin:6px 0 0;color:var(--muted);font-size:14px}
+.res-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.swatches{display:flex;gap:6px;align-items:center;margin-right:6px}
+.sw{width:28px;height:28px;border-radius:50%;border:2px solid var(--bg);background-size:cover;background-position:center;box-shadow:0 0 0 1px var(--line-strong);cursor:pointer;padding:0;position:relative;overflow:hidden}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--brand)}
+.sw span{position:absolute;inset:50% 0 0 0}
+.notice{margin:0 0 18px;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:14px}
+.notice.bad{border-color:var(--danger);color:var(--danger)}
+.notice.good{border-color:var(--ok);color:var(--ok)}
+.notice.ex{background:var(--brand-soft);border-color:transparent;color:var(--ink)}
+.res-grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start}
+.slides{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:20px;align-content:start;min-width:0}
+.card{display:flex;flex-direction:column;gap:8px;min-width:0}
+.card .num{display:flex;justify-content:space-between;align-items:center;font:12px/1 var(--mono);color:var(--muted)}
+.card .num em{font-style:normal;color:var(--ink);font-weight:500}
+.sw-wrap{position:relative;aspect-ratio:16/9;max-width:100%;overflow:hidden;border-radius:8px;box-shadow:var(--shadow),0 0 0 1px var(--line);cursor:pointer;background:#fff;transition:box-shadow .12s,transform .12s}
+.sw-wrap:hover{box-shadow:var(--shadow),0 0 0 2px var(--brand)}
+.sw-wrap.sel{box-shadow:var(--shadow),0 0 0 3px var(--amber)}
+.canvas{position:absolute;left:0;top:0;width:960px;height:540px;transform-origin:0 0}
+.canvas .e{position:absolute;overflow:hidden}
+.canvas .tx{display:flex;flex-direction:column;line-height:1.2;overflow-wrap:break-word}
+.canvas .tx p{margin:0}
+.canvas .tx p.b{padding-left:16px;text-indent:-16px}
+.canvas .tx p.b::before{content:"\2022";display:inline-block;width:16px;text-indent:0}
+.canvas table{border-collapse:collapse;width:100%;table-layout:fixed}
+.canvas td,.canvas th{padding:5px 7px;text-align:left;vertical-align:middle;line-height:1.2;overflow-wrap:break-word}
+.card details{font-size:13px;color:var(--muted)}
+.card details summary{cursor:pointer;font-size:12.5px}
+.card details p{margin:4px 0 0;white-space:pre-wrap}
+
+.assistant{display:flex;flex-direction:column;max-height:calc(100vh - 110px);position:sticky;top:calc(env(safe-area-inset-top,0px) + 80px);overflow:hidden}
+.as-head{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.as-head h3{font-size:16px}
+.as-head .live{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.log{flex:1;min-height:120px;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.msg{display:flex;flex-direction:column;gap:6px;max-width:100%}
+.msg .who{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.msg .body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px}
+.msg.user{align-self:flex-end;align-items:flex-end;max-width:92%}
+.msg.user .body{background:var(--brand);color:var(--brand-ink);padding:9px 13px;border-radius:14px 14px 4px 14px}
+.msg.err .body{color:var(--danger)}
+.msg .files{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.pill{display:inline-block;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px}
+.brief{background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.brief summary{cursor:pointer;font-weight:600}
+.brief dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 10px;margin:8px 0 0}
+.brief dt{color:var(--muted)}
+.brief dd{margin:0}
+.brief ul{margin:6px 0 0;padding-left:18px}
+.qs{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.progress{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--amber);animation:pulse 1.2s ease-in-out infinite;flex:none}
+@keyframes pulse{50%{opacity:.25}}
+.refine{border-top:1px solid var(--line);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.refine textarea{min-height:70px;font-size:14.5px;padding:10px 12px}
+.refine-row{display:flex;justify-content:flex-end;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--amber);color:var(--amber-ink);border-radius:999px;padding:3px 6px 3px 11px;font-size:12.5px;font-weight:500}
+.chip button{border:0;background:none;cursor:pointer;color:inherit;font-size:15px;line-height:1;padding:0 4px}
+
+/* feedback, versions, custom styles */
+.fb-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.fb-head h4{margin:0;font:700 15px/1.2 var(--display)}
+.fb-areas{display:flex;flex-wrap:wrap;gap:6px}
+.fb-areas span{padding:5px 11px;font-size:12.5px}
+.versions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px}
+.versions .vl{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.vbtn{border:1px solid var(--line-strong);background:var(--sunk);color:var(--ink);border-radius:999px;padding:4px 12px;font-size:12.5px;cursor:pointer}
+.vbtn[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink);font-weight:600}
+.seg .custom-sw{width:16px;height:16px;border-radius:4px;background-size:cover;background-position:center;box-shadow:0 0 0 1px rgba(255,255,255,.4)}
+.seg .rm{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px;margin-left:-4px}
+.upload-style{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border:1px dashed rgba(120,150,255,.55);border-radius:999px;font-size:13.5px;cursor:pointer;background:transparent;color:var(--brand-hover);font-weight:500}
+.upload-style:hover{background:var(--brand-soft)}
+.style-help{font-size:12.5px;color:var(--muted);margin:2px 0 0}
+.dl-group{display:flex;align-items:center;gap:8px;padding:6px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.dl-group .dl-l{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-inline:6px}
+.canvas.img{background-size:cover!important;background-position:center!important}
+footer{border-top:1px solid var(--line);padding-block:22px;color:var(--muted);font-size:13px}
+
+@media (prefers-reduced-motion: reduce){.dot,.spin{animation:none}*{transition:none!important}}
+@media (max-width: 1020px){
+  .create-grid,.res-grid{grid-template-columns:1fr}
+  .assistant{position:static;max-height:none}
+  .assistant .log{max-height:420px}
+}
+@media (max-width: 600px){
+  .wrap{padding-inline:16px}
+  .nav-link .pre,.wordmark{display:none}
+  .nav-link .cap{text-transform:uppercase}
+  .nav-link{padding:8px}
+  .nav .btn{padding:8px 11px}
+  .nav-sep{display:none}
+  .tabs{margin-left:0;width:100%}
+  .tabs button{flex:1}
+  .create{padding:20px}
+  .set{grid-template-columns:1fr;gap:6px}
+  .hero{padding-block:36px 44px}
+  .cta-row .btn{width:100%}
+}
+</style>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="logo" href="#create" aria-label="Deckwright home">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="5" width="20" height="14" rx="2.5" fill="none" stroke="#F4B13A" stroke-width="2"/><rect x="7" y="10" width="20" height="14" rx="2.5" fill="#2747D9"/><rect x="11" y="15" width="8" height="2" rx="1" fill="#fff"/><rect x="11" y="19" width="12" height="2" rx="1" fill="#fff" opacity=".6"/></svg>
+      <span class="wordmark">Deckwright</span>
+    </a>
+    <nav class="nav-links" aria-label="Samples">
+      <button class="nav-link" type="button" data-open="req"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h7"/></svg><span><span class="pre">Sample </span><span class="cap">r</span>equests</span></button>
+      <button class="nav-link" type="button" data-open="deck"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span><span class="pre">Sample </span><span class="cap">d</span>eck</span></button>
+      <span class="nav-sep" aria-hidden="true"></span>
+      <button class="btn on-dark" id="newBtn" type="button">Start over</button>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" id="create">
+  <div class="wrap">
+    <div class="hero-copy">
+      <p class="eyebrow">Presentation builder</p>
+      <h1>Turn a brief or a document into a finished deck.</h1>
+      <p class="lede">Describe what you need, attach your source material, or both. Deckwright frames the story, writes every slide with speaker notes, and hands you an editable PowerPoint and a PDF.</p>
+    </div>
+    <div class="create-grid">
+      <form class="panel create" id="composer" autocomplete="off">
+        <div class="field">
+          <div class="label-row"><label for="prompt"><span class="step">1</span>Describe your deck</label><span class="opt">Optional if you attach a file</span></div>
+          <textarea id="prompt" rows="6" placeholder="Example: A 10-slide case discussion deck for my MBA operations class, based on the attached caselet. End with four discussion questions."></textarea>
+          <div class="field-foot"><span>Say who the audience is, what the deck is for, and roughly how long it should be. Need ideas? <button type="button" class="linkish" data-open="req">See sample requests</button></span><span id="charCount">0 characters</span></div>
+        </div>
+        <div class="field">
+          <div class="label-row"><span class="lbl"><span class="step">2</span>Add source material</span><span class="opt">Optional</span></div>
+          <label class="drop" id="drop" for="fileIn" tabindex="0">
+            <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></span>
+            <strong>Drag files here or <u>browse</u></strong>
+            <span id="fileHint">PDF, Word, PowerPoint, Excel, CSV, text or images, up to 40 MB each</span>
+          </label>
+          <input type="file" id="fileIn" multiple hidden accept=".pdf,.docx,.pptx,.xlsx,.xls,.csv,.txt,.md,.json,.html,.htm,.png,.jpg,.jpeg,.webp,.gif">
+          <ul class="files" id="srcRow"></ul>
+        </div>
+        <div class="field">
+          <div class="label-row"><span class="lbl"><span class="step">3</span>Choose settings</span></div>
+          <div class="settings">
+            <div class="set"><span class="set-l" id="lCount">Slides</span><div class="seg" role="radiogroup" aria-labelledby="lCount" id="segCount"></div></div>
+            <div class="set"><span class="set-l" id="lTheme">Style</span><div><div class="seg" role="radiogroup" aria-labelledby="lTheme" id="segTheme"></div><p class="style-help" id="styleHelp">Use a standard style, or upload your own: a PowerPoint template (.pptx or .potx) brings its colours, fonts and backgrounds; an image becomes the slide background.</p><input type="file" id="styleIn" hidden accept=".pptx,.potx,.png,.jpg,.jpeg,.webp"></div></div>
+            <div class="set"><span class="set-l" id="lDepth">Depth</span><div class="seg" role="radiogroup" aria-labelledby="lDepth" id="segDepth"></div></div>
+          </div>
+        </div>
+        <div class="cta-row">
+          <p class="fine" id="ctaNote">Claude writes the deck using your Claude account. It usually takes under a minute.</p>
+          <button class="btn primary lg" id="sendBtn" type="submit">Generate deck</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</section>
+
+<div class="sheet" id="samples" role="dialog" aria-modal="true" aria-labelledby="sampTitle" hidden>
+  <div class="sheet-head"><div class="wrap sheet-head-in">
+    <div><span class="tag">Samples</span><h2 id="sampTitle">See what Deckwright can do</h2></div>
+    <div class="tabs" role="tablist" aria-label="Samples">
+      <button role="tab" id="tab-req" aria-controls="pane-req" data-tab="req" type="button">Sample requests</button>
+      <button role="tab" id="tab-deck" aria-controls="pane-deck" data-tab="deck" type="button">Sample deck</button>
+    </div>
+    <button class="btn on-dark" id="closeSamples" type="button">Close</button>
+  </div></div>
+  <div class="wrap sheet-body">
+    <div id="pane-req" role="tabpanel" aria-labelledby="tab-req">
+      <p class="sheet-note">These are sample requests, not your content. Pick one to copy it into the form, then edit it to fit your deck.</p>
+      <ul class="ex-list ex-grid" id="exList"></ul>
+      <div class="tips">
+        <h3>What makes a good brief</h3>
+        <ul><li>Who the audience is and what they should learn or decide</li><li>How long you will present, or how many slides</li><li>The source to rely on, attached as a file</li><li>Anything to include or avoid</li></ul>
+      </div>
+    </div>
+    <div id="pane-deck" role="tabpanel" aria-labelledby="tab-deck" hidden>
+      <div class="res-head">
+        <div class="t"><p class="eyebrow"><span class="tag">Example output</span></p><h2 id="sampleTitle"></h2><p class="meta">A board strategy review for Halden Foods, a fictional meal-kit company. The figures are illustrative. It shows the trend charts, tables and layouts Deckwright produces.</p></div>
+        <div class="res-actions">
+          <button class="btn" type="button" data-sample-dl="pdf"><span>Download sample PDF</span></button>
+          <button class="btn" type="button" data-sample-dl="pptx"><span>Download sample PowerPoint</span></button>
+        </div>
+      </div>
+      <div class="slides" id="sampleSlides"></div>
+    </div>
+  </div>
+</div>
+
+<section class="results" id="deck">
+  <div class="wrap">
+    <div class="res-head">
+      <div class="t"><p class="eyebrow" id="deckEyebrow">Your deck</p><h2 id="deckTitle">Untitled deck</h2><p class="meta" id="deckMeta"></p><div class="versions" id="versions"></div></div>
+      <div class="res-actions">
+        <div class="swatches" id="swatches" role="group" aria-label="Slide style"></div>
+        <div class="dl-group" id="dlGroup"><span class="dl-l">Download</span>
+        <button class="btn" id="dlPdf" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg><span>PDF</span></button>
+        <button class="btn primary" id="dlBtn" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg><span>PowerPoint (.pptx)</span></button></div>
+      </div>
+    </div>
+    <div id="notice" class="notice" hidden></div>
+    <div class="res-grid">
+      <div class="slides" id="slides"></div>
+      <aside class="panel assistant" aria-label="Assistant">
+        <div class="as-head"><span class="live" aria-hidden="true"></span><h3>Feedback &amp; revisions</h3></div>
+        <div class="log" id="log" aria-live="polite"></div>
+        <form class="refine" id="refine" autocomplete="off">
+          <div class="fb-head"><h4>Your feedback on this deck</h4><span class="opt">Claude builds a new version from it</span></div>
+          <div class="seg fb-areas" id="fbAreas" role="group" aria-label="What needs work"></div>
+          <div class="chips" id="focusRow"></div>
+          <label for="refineIn" class="opt">What should change?</label>
+          <textarea id="refineIn" rows="3" placeholder="For example: the story is too long; merge slides 3 and 4 and end with a clear recommendation"></textarea>
+          <div class="refine-row"><button class="btn" id="stopBtn" type="button" hidden>Stop</button><button class="btn primary" id="refineBtn" type="submit">Create revised deck</button></div>
+        </form>
+      </aside>
+    </div>
+  </div>
+</section>
+<footer><div class="wrap">Deckwright writes with Claude. Check figures and facts before you present.</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.3/dist/svg2pdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- Slide themes (PowerPoint colours, no #) ---------- */
+const THEMES = {
+  boardroom:{label:"Boardroom",bg:"FFFFFF",ink:"1B2433",muted:"5B6475",primary:"1F3A5F",accent:"2A9D8F",soft:"EEF2F7",line:"D5DCE6",onPrimary:"FFFFFF",headColor:"1F3A5F",coverBg:"1F3A5F",coverInk:"FFFFFF",coverMuted:"C9D4E3",head:"Georgia",headBold:false,body:"Calibri",chart:["1F3A5F","2A9D8F","E9A23B","8E5BA8","D1495B","6C8EAD"]},
+  midnight:{label:"Midnight",bg:"141A26",ink:"EEF1F7",muted:"A3AEC2",primary:"8FB0FF",accent:"F2C14E",soft:"1F2738",line:"334058",onPrimary:"0E131D",headColor:"FFFFFF",coverBg:"0B101A",coverInk:"FFFFFF",coverMuted:"A3AEC2",head:"Calibri",headBold:true,body:"Calibri",chart:["8FB0FF","F2C14E","5FD3B4","F28482","C3A6FF","A3AEC2"]},
+  ivy:{label:"Ivy",bg:"FFFFFF",ink:"1D2B26",muted:"5A6A63",primary:"1E5B4F",accent:"C8553D",soft:"EDF3F1",line:"D3E0DB",onPrimary:"FFFFFF",headColor:"1E5B4F",coverBg:"1E5B4F",coverInk:"FFFFFF",coverMuted:"CFE2DC",head:"Georgia",headBold:false,body:"Calibri",chart:["1E5B4F","C8553D","D8A31A","5B8DB8","7E6BA8","8AA399"]},
+  campus:{label:"Campus",bg:"FFFFFF",ink:"2A1E24",muted:"6B5A62",primary:"7A1F3D",accent:"C98F1E",soft:"F7EEF1",line:"E6D5DC",onPrimary:"FFFFFF",headColor:"7A1F3D",coverBg:"7A1F3D",coverInk:"FFFFFF",coverMuted:"EBCFD9",head:"Cambria",headBold:true,body:"Calibri",chart:["7A1F3D","C98F1E","3E6E8E","5E8C61","A35C7A","8C7B70"]}
+};
+const CUSTOM = {};
+const themeOf = k => THEMES[k] || CUSTOM[k] || THEMES.boardroom;
+const LAYOUTS = ["title","section","bullets","two_column","cards","stats","chart","table","process","quote","closing"];
+
+/* ---------- Text measurement (pt units; Arial metrics run wider than Calibri, so fitting is conservative) ---------- */
+const W = 13.333, H = 7.5, PT = 72, M = 0.6, CW = W - 2*M, Y0 = 1.72, Y1 = 6.8, BH = Y1 - Y0, IND = 16;
+const ctx = document.createElement("canvas").getContext("2d");
+const SERIF = /Georgia|Cambria|Times|Garamond|Baskerville|Palatino|Book Antiqua|Didot|Bodoni|Caslon|Merriweather|Playfair|Lora|serif/i;
+const stack = f => SERIF.test(f) ? `"${f}", Georgia, Cambria, "Times New Roman", serif` : `"${f}", Calibri, Carlito, Arial, Helvetica, sans-serif`;
+function lines(text, size, widthPt, face, bold, italic){
+  ctx.font = `${italic?"italic ":""}${bold?700:400} ${size}px ${stack(face)}`;
+  const words = String(text).split(/\s+/).filter(Boolean);
+  if (!words.length) return 1;
+  const sp = ctx.measureText(" ").width;
+  let n = 1, cur = 0;
+  for (const w of words){
+    const ww = ctx.measureText(w).width;
+    if (cur === 0){ cur = ww; if (ww > widthPt){ n += Math.floor(ww / widthPt); cur = ww % widthPt; } }
+    else if (cur + sp + ww <= widthPt) cur += sp + ww;
+    else { n++; cur = ww; if (ww > widthPt){ n += Math.floor(ww / widthPt); cur = ww % widthPt; } }
+  }
+  return n;
+}
+function fit(paras, wIn, hIn, o){
+  const lh = 1.2, gap = o.gap ?? 0.45, ind = o.bullet ? IND : 0;
+  for (let s = o.max; s >= o.min; s -= 0.5){
+    let h = 0;
+    paras.forEach((p, i) => { h += lines(p, s, wIn*PT*(SERIF.test(o.face) ? 0.9 : 0.92) - ind - 2, o.face, o.bold, o.italic) * s * lh; if (i < paras.length - 1) h += s * gap; });
+    if (h <= hIn*PT) return s;
+  }
+  return o.min;
+}
+
+/* ---------- Layout engine: one element list feeds both the preview and the .pptx ---------- */
+function T(x,y,w,h,paras,o){ return Object.assign({k:"text",x,y,w,h,paras:paras.map(p => typeof p === "string" ? {t:p} : p),align:"left",valign:"top",gap:.45},o); }
+function R(x,y,w,h,fill,o){ return Object.assign({k:"rect",x,y,w,h,fill},o); }
+
+function frame(s, t, i, n, els, opts={}){
+  els.push(R(M,0.42,0.55,0.06,t.accent));
+  const ts = fit([s.title], CW, 1.05, {max:28,min:17,face:t.head,bold:t.headBold});
+  els.push(T(M,0.56,CW,1.05,[s.title],{size:ts,face:t.head,bold:t.headBold,color:t.headColor}));
+  if (s.source) els.push(T(M,6.93,CW-1.2,0.4,[s.source],{size:fit([s.source],CW-1.2,0.4,{max:10,min:7.5,face:t.body}),face:t.body,color:t.muted,valign:"bottom"}));
+  els.push(T(W-M-1,6.93,1,0.4,[String(i+1)],{size:10,face:t.body,color:t.muted,align:"right",valign:"bottom"}));
+}
+function takeawayBox(s, t, els, y, h){
+  els.push(R(M,y,CW,h,t.soft));
+  els.push(R(M,y,0.08,h,t.accent));
+  const sz = fit([s.takeaway], CW-0.6, h-0.3, {max:20,min:12,face:t.body,bold:true});
+  els.push(T(M+0.3,y+0.15,CW-0.6,h-0.3,[s.takeaway],{size:sz,face:t.body,bold:true,color:t.ink,valign:"middle"}));
+}
+function bulletsEl(items, x, y, w, h, t, max, min, color){
+  const sz = fit(items, w, h, {max,min,face:t.body,bullet:true,gap:.55});
+  return T(x,y,w,h,items.map(b => ({t:b,bullet:true})),{size:sz,face:t.body,color:color||t.ink,gap:.55});
+}
+const uniform = (texts, w, h, o) => Math.min(...texts.map(x => fit([x], w, h, o)));
+
+const BUILD = {
+  title(s,t,i,n,els){
+    els.bg = t.coverBg;
+    // Title sits on a baseline above the rule, so a longer wrap grows upward and never runs into the subtitle.
+    const ts = fit([s.title], CW-1.5, 2.9, {max:46,min:26,face:t.head,bold:true});
+    els.push(T(M,1.35,CW-1.5,2.9,[s.title],{size:ts,face:t.head,bold:true,color:t.coverInk,valign:"bottom"}));
+    els.push(R(M,4.45,1.1,0.08,t.accent));
+    if (s.subtitle) els.push(T(M,4.75,CW-2,1.1,[s.subtitle],{size:fit([s.subtitle],CW-2,1.1,{max:22,min:14,face:t.body}),face:t.body,color:t.coverMuted}));
+    if (s.author) els.push(T(M,6.25,CW,0.5,[s.author],{size:14,face:t.body,color:t.coverMuted,valign:"bottom"}));
+  },
+  section(s,t,i,n,els){
+    els.bg = t.coverBg;
+    els.push(R(M,2.55,0.8,0.08,t.accent));
+    els.push(T(M,2.8,CW-1,1.6,[s.title],{size:fit([s.title],CW-1,1.6,{max:40,min:24,face:t.head,bold:true}),face:t.head,bold:true,color:t.coverInk}));
+    if (s.subtitle) els.push(T(M,4.5,CW-2,1,[s.subtitle],{size:fit([s.subtitle],CW-2,1,{max:20,min:13,face:t.body}),face:t.body,color:t.coverMuted}));
+    els.push(T(W-M-1,6.93,1,0.4,[String(i+1)],{size:10,face:t.body,color:t.coverMuted,align:"right",valign:"bottom"}));
+  },
+  bullets(s,t,i,n,els){
+    frame(s,t,i,n,els);
+    const h = s.takeaway ? BH - 1.25 : BH;
+    els.push(bulletsEl(s.bullets, M, Y0+0.1, CW, h-0.1, t, 26, 13));
+    if (s.takeaway) takeawayBox(s,t,els,Y1-1.0,1.0);
+  },
+  two_column(s,t,i,n,els){
+    frame(s,t,i,n,els);
+    const gap = 0.3, cw = (CW-gap)/2, pad = 0.3;
+    const hs = uniform(s.columns.map(c => c.heading), cw-2*pad, 0.75, {max:22,min:13,face:t.body,bold:true});
+    const bs = Math.min(...s.columns.map(c => fit(c.bullets, cw-2*pad, BH-1.2-pad, {max:21,min:11,face:t.body,bullet:true,gap:.55})));
+    s.columns.forEach((c, k) => {
+      const x = M + k*(cw+gap);
+      els.push(R(x,Y0,cw,BH,t.soft));
+      els.push(R(x,Y0,cw,0.07,k ? t.accent : t.primary));
+      els.push(T(x+pad,Y0+0.3,cw-2*pad,0.75,[c.heading],{size:hs,face:t.body,bold:true,color:t.headColor}));
+      els.push(T(x+pad,Y0+1.15,cw-2*pad,BH-1.2-pad,c.bullets.map(b => ({t:b,bullet:true})),{size:bs,face:t.body,color:t.ink,gap:.55}));
+    });
+  },
+  cards(s,t,i,n,els){
+    frame(s,t,i,n,els);
+    const k = s.items.length, cols = k <= 3 ? k : (k === 4 ? 2 : 3), rows = Math.ceil(k/cols), gap = 0.25, pad = 0.25;
+    const cw = (CW - gap*(cols-1))/cols, ch = (BH - gap*(rows-1))/rows, hh = Math.min(0.75, ch*0.32);
+    const hs = uniform(s.items.map(x => x.heading), cw-2*pad, hh, {max:21,min:12,face:t.body,bold:true});
+    const bs = uniform(s.items.map(x => x.text), cw-2*pad, ch-hh-2*pad-0.1, {max:19,min:10,face:t.body});
+    s.items.forEach((it, j) => {
+      const x = M + (j%cols)*(cw+gap), y = Y0 + Math.floor(j/cols)*(ch+gap);
+      els.push(R(x,y,cw,ch,t.soft));
+      els.push(R(x+pad,y+pad-0.06,0.4,0.05,t.accent));
+      els.push(T(x+pad,y+pad+0.05,cw-2*pad,hh,[it.heading],{size:hs,face:t.body,bold:true,color:t.headColor}));
+      els.push(T(x+pad,y+pad+0.1+hh,cw-2*pad,ch-hh-2*pad-0.1,[it.text],{size:bs,face:t.body,color:t.ink}));
+    });
+  },
+  stats(s,t,i,n,els){
+    frame(s,t,i,n,els);
+    const k = s.stats.length, gap = 0.35, cw = (CW - gap*(k-1))/k, area = s.takeaway ? BH - 1.35 : BH;
+    const vs = uniform(s.stats.map(x => x.value), cw-0.3, 1.25, {max:k <= 2 ? 64 : k === 3 ? 52 : 44,min:24,face:t.head,bold:true});
+    const ls = uniform(s.stats.map(x => x.label), cw-0.3, 0.7, {max:21,min:11,face:t.body,bold:true});
+    const ds = uniform(s.stats.map(x => x.detail || " "), cw-0.3, area-2.45, {max:18,min:10,face:t.body});
+    s.stats.forEach((st, j) => {
+      const x = M + j*(cw+gap), y = Y0 + 0.2;
+      els.push(R(x,y,0.05,area-0.3,t.accent));
+      els.push(T(x+0.3,y,cw-0.3,1.25,[st.value],{size:vs,face:t.head,bold:true,color:t.headColor,valign:"bottom"}));
+      els.push(T(x+0.3,y+1.35,cw-0.3,0.7,[st.label],{size:ls,face:t.body,bold:true,color:t.ink}));
+      if (st.detail) els.push(T(x+0.3,y+2.1,cw-0.3,area-2.45,[st.detail],{size:ds,face:t.body,color:t.muted}));
+    });
+    if (s.takeaway) takeawayBox(s,t,els,Y1-1.05,1.05);
+  },
+  chart(s,t,i,n,els){
+    frame(s,t,i,n,els);
+    const side = s.bullets && s.bullets.length;
+    const cw = side ? 7.7 : CW;
+    els.push({k:"chart",x:M,y:Y0,w:cw,h:BH,chart:s.chart});
+    if (side){
+      const x = M+cw+0.3, w = CW-cw-0.3, pad = 0.3;
+      els.push(R(x,Y0,w,BH,t.soft));
+      els.push(T(x+pad,Y0+0.25,w-2*pad,0.5,[s.panel || "What the data shows"],{size:16,face:t.body,bold:true,color:t.headColor}));
+      els.push(bulletsEl(s.bullets, x+pad, Y0+0.85, w-2*pad, BH-1.1, t, 20, 11));
+    }
+  },
+  table(s,t,i,n,els){
+    frame(s,t,i,n,els);
+    const r = s.table.rows.length, size = r <= 4 ? 20 : r <= 6 ? 17 : 14;
+    const lens = s.table.headers.map((h, c) => Math.max(String(h).length, ...s.table.rows.map(row => String(row[c] ?? "").length)));
+    const tot = lens.reduce((a, b) => a + Math.min(Math.max(b, 6), 40), 0);
+    const colW = lens.map(l => CW * Math.min(Math.max(l, 6), 40) / tot);
+    els.push({k:"table",x:M,y:Y0+0.05,w:CW,h:s.takeaway ? BH-1.3 : BH,headers:s.table.headers,rows:s.table.rows,size,colW});
+    if (s.takeaway) takeawayBox(s,t,els,Y1-1.0,1.0);
+  },
+  process(s,t,i,n,els){
+    frame(s,t,i,n,els);
+    const k = s.steps.length, gap = 0.4, bw = (CW - gap*(k-1))/k, hasWhen = s.steps.some(x => x.when);
+    const yb = Y0 + (hasWhen ? 0.55 : 0.15), bh = 1.05, dy = yb + bh + 0.25, dh = (s.takeaway ? Y1-1.15 : Y1) - dy;
+    const ls = uniform(s.steps.map(x => x.label), bw-0.3, bh-0.2, {max:21,min:11,face:t.body,bold:true});
+    const ds = uniform(s.steps.map(x => x.detail || " "), bw-0.1, dh, {max:18,min:10,face:t.body});
+    s.steps.forEach((st, j) => {
+      const x = M + j*(bw+gap);
+      if (st.when) els.push(T(x,Y0+0.05,bw,0.4,[st.when],{size:14,face:t.body,bold:true,color:t.accent,valign:"bottom"}));
+      els.push(R(x,yb,bw,bh,t.primary));
+      els.push(T(x+0.15,yb+0.1,bw-0.3,bh-0.2,[st.label],{size:ls,face:t.body,bold:true,color:t.onPrimary,valign:"middle",align:"center"}));
+      if (j < k-1) els.push(R(x+bw+0.08,yb+bh/2-0.16,gap-0.16,0.32,t.accent,{shape:"arrow"}));
+      if (st.detail) els.push(T(x+0.05,dy,bw-0.1,dh,[st.detail],{size:ds,face:t.body,color:t.ink}));
+    });
+    if (s.takeaway) takeawayBox(s,t,els,Y1-0.95,0.95);
+  },
+  quote(s,t,i,n,els){
+    frame(s,t,i,n,els);
+    els.push(T(M,Y0-0.1,1,1.3,["“"],{size:110,face:"Georgia",color:t.accent}));
+    els.push(T(M+1.1,Y0+0.35,CW-2.2,3.3,[s.quote],{size:fit([s.quote],CW-2.2,3.3,{max:32,min:16,face:t.head,italic:true}),face:t.head,italic:true,color:t.ink,valign:"middle"}));
+    if (s.attribution) els.push(T(M+1.1,Y0+3.85,CW-2.2,0.6,["— " + s.attribution],{size:16,face:t.body,color:t.muted}));
+  },
+  closing(s,t,i,n,els){
+    frame(s,t,i,n,els);
+    const k = s.bullets.length, rh = Math.min(1.15, BH/k), ts = uniform(s.bullets, CW-1.0, rh-0.15, {max:24,min:11,face:t.body});
+    s.bullets.forEach((b, j) => {
+      const y = Y0 + 0.05 + j*rh;
+      els.push(R(M,y+0.02,0.56,0.56,t.accent,{shape:"ellipse"}));
+      els.push(T(M,y+0.02,0.56,0.56,[String(j+1)],{size:18,face:t.body,bold:true,color:t.bg === "FFFFFF" ? "FFFFFF" : t.onPrimary,align:"center",valign:"middle"}));
+      els.push(T(M+0.8,y+0.06,CW-0.8,rh-0.15,[b],{size:ts,face:t.body,color:t.ink}));
+    });
+  }
+};
+function layoutSlide(s, t, i, n){
+  const els = []; els.bg = t.bg;
+  try { BUILD[s.layout](s, t, i, n, els); }
+  catch (e) { console.warn("layout fallback", e); els.length = 0; els.bg = t.bg; BUILD.bullets({...s, bullets:[...(s.bullets||[]), "(This slide's content could not be laid out.)"]}, t, i, n, els); }
+  els.img = /^(title|section)$/.test(s.layout) ? (t.coverImage || t.bgImage || null) : (t.bgImage || null);
+  els.imgKind = els.img ? (/^(title|section)$/.test(s.layout) && t.coverImage ? "cover" : "bg") : null;
+  return els;
+}
+
+/* ---------- Deck normalisation: whatever Claude returns, make it safe to render ---------- */
+const str = (v, max = 400) => (v == null ? "" : String(v)).replace(/\s+/g, " ").trim().slice(0, max);
+const arr = (v, max) => (Array.isArray(v) ? v : v == null || v === "" ? [] : [v]).slice(0, max);
+function normSlide(r){
+  const s = {layout: LAYOUTS.includes(r?.layout) ? r.layout : "bullets", title: str(r?.title, 200) || "Untitled slide"};
+  ["subtitle","author","takeaway","source","quote","attribution","panel"].forEach(k => { if (r?.[k]) s[k] = str(r[k], k === "quote" ? 500 : 300); });
+  s.notes = (r?.notes == null ? "" : String(r.notes)).trim().slice(0, 3000);
+  s.bullets = arr(r?.bullets, 7).map(b => str(typeof b === "object" ? (b.text || b.t || JSON.stringify(b)) : b, 260)).filter(Boolean);
+  if (s.layout === "two_column"){
+    s.columns = arr(r?.columns, 2).map(c => ({heading: str(c?.heading, 80) || " ", bullets: arr(c?.bullets, 6).map(b => str(b, 200)).filter(Boolean)}));
+    if (s.columns.length < 2) s.layout = "bullets";
+  }
+  if (s.layout === "cards"){
+    s.items = arr(r?.items, 6).map(c => ({heading: str(c?.heading, 80), text: str(c?.text, 260)})).filter(c => c.heading || c.text);
+    if (!s.items.length) s.layout = "bullets";
+  }
+  if (s.layout === "stats"){
+    s.stats = arr(r?.stats, 4).map(c => ({value: str(c?.value, 24), label: str(c?.label, 80), detail: str(c?.detail, 200)})).filter(c => c.value);
+    if (!s.stats.length) s.layout = "bullets";
+  }
+  if (s.layout === "process"){
+    s.steps = arr(r?.steps, 6).map(c => ({label: str(c?.label, 60), detail: str(c?.detail, 220), when: str(c?.when, 30)})).filter(c => c.label);
+    if (!s.steps.length) s.layout = "bullets";
+  }
+  if (s.layout === "table"){
+    const tb = r?.table || {}, headers = arr(tb.headers, 6).map(h => str(h, 60));
+    const rows = arr(tb.rows, 9).map(row => headers.map((_, c) => str(Array.isArray(row) ? row[c] : "", 120)));
+    if (headers.length >= 2 && rows.length) s.table = {headers, rows}; else s.layout = "bullets";
+  }
+  if (s.layout === "chart"){
+    const c = r?.chart || {}, cats = arr(c.categories, 14).map(x => str(x, 40));
+    const series = arr(c.series, 4).map(se => ({name: str(se?.name, 40) || "Series", values: cats.map((_, k) => { const v = parseFloat(String(se?.values?.[k] ?? "").replace(/[^0-9.\-]/g, "")); return isFinite(v) ? v : 0; })}));
+    if (cats.length && series.length) s.chart = {type: ["bar","line","pie","doughnut"].includes(c.type) ? c.type : "bar", categories: cats, series: /pie|doughnut/.test(c.type) ? series.slice(0,1) : series, unit: str(c.unit, 16)};
+    else s.layout = "bullets";
+  }
+  if (s.layout === "quote" && !s.quote) s.layout = "bullets";
+  if (["bullets","closing"].includes(s.layout) && !s.bullets.length) s.bullets = [s.subtitle || s.takeaway || " "];
+  return s;
+}
+function normDeck(raw){
+  const d = raw?.deck || raw || {};
+  const slides = arr(d.slides, 40).map(normSlide);
+  return {title: str(d.title, 200) || slides[0]?.title || "Untitled deck", subtitle: str(d.subtitle, 300), slides};
+}
+
+/* ---------- Preview rendering ---------- */
+function chartSVG(c, t, w, h){
+  const Wp = w*PT, Hp = h*PT, col = k => "#" + t.chart[k % t.chart.length];
+  const fmt = v => (Math.abs(v) >= 1000 ? v.toLocaleString("en-US", {maximumFractionDigits: 0}) : +v.toFixed(2)) + (c.unit === "%" ? "%" : "");
+  let out = `<svg xmlns="http://www.w3.org/2000/svg" width="${Wp}" height="${Hp}" viewBox="0 0 ${Wp} ${Hp}" font-family='${stack(t.body)}'>`;
+  if (/pie|doughnut/.test(c.type)){
+    const vals = c.series[0].values.map(v => Math.max(0, v)), tot = vals.reduce((a, b) => a + b, 0) || 1;
+    const r = Math.min(Hp*0.42, Wp*0.28), cx = Wp*0.33, cy = Hp/2; let a0 = -Math.PI/2;
+    vals.forEach((v, k) => {
+      const a1 = a0 + v/tot*Math.PI*2, large = a1 - a0 > Math.PI ? 1 : 0;
+      const p = (a, rr) => `${cx + rr*Math.cos(a)},${cy + rr*Math.sin(a)}`;
+      out += v >= tot ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col(k)}"/>` : `<path d="M${cx},${cy} L${p(a0, r)} A${r},${r} 0 ${large} 1 ${p(a1, r)} Z" fill="${col(k)}" stroke="#${t.bg}" stroke-width="1.5"/>`;
+      const am = (a0 + a1)/2;
+      if (v/tot > 0.05) out += `<text x="${cx + r*0.68*Math.cos(am)}" y="${cy + r*0.68*Math.sin(am) + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">${Math.round(v/tot*100)}%</text>`;
+      a0 = a1;
+    });
+    if (c.type === "doughnut") out += `<circle cx="${cx}" cy="${cy}" r="${r*0.52}" fill="#${t.bg}"/>`;
+    c.categories.forEach((cat, k) => { const y = cy - c.categories.length*13 + k*26; out += `<rect x="${Wp*0.66}" y="${y}" width="12" height="12" fill="${col(k)}"/><text x="${Wp*0.66 + 20}" y="${y + 11}" font-size="15" fill="#${t.ink}">${esc(cat.slice(0, 30))}</text>`; });
+    return out + "</svg>";
+  }
+  const multi = c.series.length > 1, L = 56, Rr = 12, Tt = 18, B = multi ? 62 : 38;
+  const all = c.series.flatMap(s => s.values), mx = Math.max(0, ...all), mn = Math.min(0, ...all);
+  const span = (mx - mn) || 1, step = Math.pow(10, Math.floor(Math.log10(span/4))), nice = [1,2,2.5,5,10].map(m => m*step).find(s => span/s <= 5) || step*10;
+  const top = Math.ceil(mx/nice)*nice, bot = Math.floor(mn/nice)*nice, pw = Wp - L - Rr, ph = Hp - Tt - B;
+  const Y = v => Tt + ph * (top - v)/((top - bot) || 1);
+  for (let v = bot; v <= top + 1e-9; v += nice) out += `<line x1="${L}" x2="${Wp-Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="#${t.line}" stroke-width="${v === 0 ? 1.2 : .6}"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="#${t.muted}">${fmt(v)}</text>`;
+  const nc = c.categories.length, slot = pw/nc;
+  c.categories.forEach((cat, k) => out += `<text x="${L + slot*(k+.5)}" y="${Tt+ph+19}" text-anchor="middle" font-size="${nc > 8 ? 11 : 14}" fill="#${t.muted}">${esc(cat.length > 16 ? cat.slice(0, 15) + "…" : cat)}</text>`);
+  if (c.type === "line"){
+    c.series.forEach((s, j) => {
+      const pts = s.values.map((v, k) => `${L + slot*(k+.5)},${Y(v)}`);
+      out += `<polyline points="${pts.join(" ")}" fill="none" stroke="${col(j)}" stroke-width="2.5"/>` + pts.map(p => `<circle cx="${p.split(",")[0]}" cy="${p.split(",")[1]}" r="3.5" fill="${col(j)}"/>`).join("");
+    });
+  } else {
+    const bw = slot*0.7/c.series.length;
+    c.series.forEach((s, j) => s.values.forEach((v, k) => {
+      const x = L + slot*k + slot*0.15 + j*bw, y0 = Y(Math.max(v, 0)), y1 = Y(Math.min(v, 0));
+      out += `<rect x="${x}" y="${y0}" width="${bw-1}" height="${Math.max(0.5, y1-y0)}" fill="${col(j)}"/>`;
+      if (!multi && nc <= 10) out += `<text x="${x + bw/2}" y="${v >= 0 ? y0-5 : y1+13}" text-anchor="middle" font-size="13" fill="#${t.ink}">${fmt(v)}</text>`;
+    }));
+  }
+  if (multi){ let x = L; c.series.forEach((s, j) => { out += `<rect x="${x}" y="${Hp-16}" width="12" height="12" fill="${col(j)}"/><text x="${x+18}" y="${Hp-6}" font-size="14" fill="#${t.ink}">${esc(s.name)}</text>`; x += 34 + s.name.length*8; }); }
+  return out + "</svg>";
+}
+function renderEls(els, t){
+  let h = els.img ? `<div class="canvas img" style="background-color:#${els.bg};background-image:var(--${els.imgKind}-img)">` : `<div class="canvas" style="background:#${els.bg}">`;
+  for (const e of els){
+    const box = `left:${e.x*PT}px;top:${e.y*PT}px;width:${e.w*PT}px;height:${e.h*PT}px`;
+    if (e.k === "rect"){
+      const sh = e.shape === "ellipse" ? "border-radius:50%;" : e.shape === "arrow" ? "clip-path:polygon(0 30%,60% 30%,60% 0,100% 50%,60% 100%,60% 70%,0 70%);" : "";
+      h += `<div class="e" style="${box};background:#${e.fill};${sh}"></div>`;
+    } else if (e.k === "text"){
+      const jc = {top:"flex-start",middle:"center",bottom:"flex-end"}[e.valign];
+      h += `<div class="e tx" style="${box};justify-content:${jc};text-align:${e.align};font-family:${esc(stack(e.face))};font-size:${e.size}px;color:#${e.color};font-weight:${e.bold?700:400};font-style:${e.italic?"italic":"normal"};gap:${e.size*e.gap}px">` +
+        e.paras.map(p => `<p class="${p.bullet ? "b" : ""}">${esc(p.t)}</p>`).join("") + `</div>`;
+    } else if (e.k === "chart"){
+      h += `<div class="e" style="${box}">${chartSVG(e.chart, t, e.w, e.h)}</div>`;
+    } else if (e.k === "table"){
+      h += `<div class="e" style="${box}"><table style="font-family:${esc(stack(t.body))};font-size:${e.size}px;color:#${t.ink}"><colgroup>${e.colW.map(w => `<col style="width:${w*PT}px">`).join("")}</colgroup><tr>` +
+        e.headers.map(x => `<th style="background:#${t.primary};color:#${t.onPrimary};border:1px solid #${t.line}">${esc(x)}</th>`).join("") + "</tr>" +
+        e.rows.map((r, ri) => "<tr>" + r.map(c => `<td style="background:#${ri % 2 ? t.soft : t.bg};border:1px solid #${t.line}">${esc(c)}</td>`).join("") + "</tr>").join("") + "</table></div>";
+    }
+  }
+  return h + "</div>";
+}
+
+/* ---------- PowerPoint export ---------- */
+async function buildPptx(deck, key){
+  const t = themeOf(key), pptx = new PptxGenJS();
+  pptx.layout = "LAYOUT_WIDE"; pptx.title = deck.title; pptx.company = ""; pptx.author = "Deckwright";
+  const n = deck.slides.length;
+  deck.slides.forEach((s, i) => {
+    const sl = pptx.addSlide(), els = layoutSlide(s, t, i, n);
+    sl.background = els.img ? {data: els.img.replace(/^data:/, "")} : {color: els.bg};
+    for (const e of els){
+      if (e.k === "rect"){
+        const type = e.shape === "ellipse" ? pptx.ShapeType.ellipse : e.shape === "arrow" ? pptx.ShapeType.rightArrow : pptx.ShapeType.rect;
+        sl.addShape(type, {x:e.x,y:e.y,w:e.w,h:e.h,fill:{color:e.fill},line:{color:e.fill,width:0}});
+      } else if (e.k === "text"){
+        const last = e.paras.length - 1;
+        const runs = e.paras.map((p, k) => ({text: p.t, options: {bullet: p.bullet ? {indent: IND} : false, breakLine: k < last, paraSpaceAfter: k < last ? e.size*e.gap : 0}}));
+        sl.addText(runs, {x:e.x,y:e.y,w:e.w,h:e.h,fontFace:e.face,fontSize:e.size,color:e.color,bold:!!e.bold,italic:!!e.italic,align:e.align,valign:e.valign,margin:0,fit:"none",wrap:true});
+      } else if (e.k === "chart"){
+        const c = e.chart, pie = /pie|doughnut/.test(c.type), single = c.series.length === 1;
+        const data = c.series.map(se => ({name: se.name, labels: c.categories, values: se.values}));
+        const opts = {x:e.x,y:e.y,w:e.w,h:e.h,chartColors: !pie && single ? [t.chart[0]] : t.chart,showTitle:false,
+          showLegend: pie || !single, legendPos: pie ? "r" : "b", legendFontSize:14, legendColor:t.ink, legendFontFace:t.body,
+          catAxisLabelColor:t.muted, valAxisLabelColor:t.muted, catAxisLabelFontSize:14, valAxisLabelFontSize:12, catAxisLabelFontFace:t.body, valAxisLabelFontFace:t.body,
+          valGridLine:{color:t.line,size:0.5}, catGridLine:{style:"none"}, valAxisLineShow:false, catAxisLineShow:true,
+          dataLabelFontSize:13, dataLabelColor: pie ? "FFFFFF" : t.ink, dataLabelFontFace:t.body};
+        if (pie){ Object.assign(opts, {showPercent:true, showValue:false, dataLabelPosition: c.type === "pie" ? "inEnd" : undefined}); if (c.type === "doughnut") opts.holeSize = 52; }
+        else if (c.type === "bar"){ Object.assign(opts, {barDir:"col", barGrouping:"clustered", barGapWidthPct:60, showValue: single && c.categories.length <= 10, dataLabelPosition:"outEnd"}); }
+        else Object.assign(opts, {lineSize:2.5, lineDataSymbol:"circle", lineDataSymbolSize:7});
+        const type = {bar:pptx.ChartType.bar, line:pptx.ChartType.line, pie:pptx.ChartType.pie, doughnut:pptx.ChartType.doughnut}[c.type];
+        sl.addChart(type, data, opts);
+      } else if (e.k === "table"){
+        const rows = [e.headers.map(x => ({text:x, options:{bold:true,color:t.onPrimary,fill:{color:t.primary}}}))]
+          .concat(e.rows.map((r, ri) => r.map(x => ({text:x, options:{color:t.ink,fill:{color: ri % 2 ? t.soft : t.bg}}}))));
+        sl.addTable(rows, {x:e.x,y:e.y,w:e.w,colW:e.colW,fontFace:t.body,fontSize:e.size,border:{type:"solid",pt:0.75,color:t.line},valign:"middle",autoPage:false});
+      }
+    }
+    if (s.notes) sl.addNotes(s.notes);
+  });
+  return pptx.write({outputType: "blob"});
+}
+
+/* ---------- Reading attached files ---------- */
+const TEXT_BUDGET = 150000;
+async function readFile(file){
+  const name = file.name, ext = (name.split(".").pop() || "").toLowerCase(), out = {name, size: file.size, text: "", images: [], note: ""};
+  try {
+    if (/^(png|jpe?g|webp|gif)$/.test(ext) || /^image\//.test(file.type)){ out.images = [file]; out.note = "image"; return out; }
+    if (ext === "pdf"){
+      const pdf = await pdfjsLib.getDocument({data: new Uint8Array(await file.arrayBuffer())}).promise, parts = [];
+      for (let p = 1; p <= Math.min(pdf.numPages, 80); p++){
+        const tc = await (await pdf.getPage(p)).getTextContent();
+        parts.push(`[page ${p}]\n` + tc.items.map(it => it.str + (it.hasEOL ? "\n" : " ")).join("").replace(/[ \t]+/g, " "));
+      }
+      out.text = parts.join("\n\n");
+      out.pages = pdf.numPages; out.pdf = pdf;
+      if (out.text.replace(/\[page \d+\]|\s/g, "").length < 80 * Math.min(pdf.numPages, 80)) out.scan = pdf; // little text: likely scanned or chart-heavy
+      return out;
+    }
+    if (ext === "docx"){ out.text = (await mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()})).value; return out; }
+    if (ext === "pptx"){
+      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      const names = Object.keys(zip.files).filter(f => /^ppt\/slides\/slide\d+\.xml$/.test(f)).sort((a, b) => +a.match(/\d+/)[0] - +b.match(/\d+/)[0]);
+      const parts = [];
+      for (const f of names){
+        const xml = new DOMParser().parseFromString(await zip.file(f).async("string"), "application/xml");
+        const paras = [...xml.getElementsByTagName("a:p")].map(p => [...p.getElementsByTagName("a:t")].map(x => x.textContent).join("")).filter(Boolean);
+        parts.push(`[slide ${f.match(/\d+/)[0]}]\n` + paras.join("\n"));
+      }
+      out.text = parts.join("\n\n"); return out;
+    }
+    if (/^xlsx?$/.test(ext)){
+      const wb = XLSX.read(await file.arrayBuffer(), {type: "array"});
+      out.text = wb.SheetNames.slice(0, 8).map(sn => `[sheet ${sn}]\n` + XLSX.utils.sheet_to_csv(wb.Sheets[sn]).split("\n").slice(0, 300).join("\n")).join("\n\n"); return out;
+    }
+    out.text = await file.text();
+    if (/html?$/.test(ext)) out.text = new DOMParser().parseFromString(out.text, "text/html").body.innerText;
+    return out;
+  } catch (e) { console.warn(e); out.note = "could not read"; out.failed = true; return out; }
+}
+async function pdfPagesToImages(pdf, max){
+  const blobs = [];
+  for (let p = 1; p <= Math.min(pdf.numPages, max); p++){
+    const page = await pdf.getPage(p), vp = page.getViewport({scale: 1.6}), cv = document.createElement("canvas");
+    cv.width = vp.width; cv.height = vp.height;
+    await page.render({canvasContext: cv.getContext("2d"), viewport: vp}).promise;
+    blobs.push(await new Promise(r => cv.toBlob(r, "image/jpeg", 0.85)));
+  }
+  return blobs;
+}
+
+/* ---------- Prompt ---------- */
+const RULES = `You are Deckwright, a presentation strategist and deck writer. You turn a person's request, and any source material they attach, into a complete slide deck that a renderer converts into an editable PowerPoint file.
+
+How to work (think this through before writing the JSON):
+1. Establish the audience (expertise, priorities, the decision or takeaway they need), the purpose (inform, persuade, teach, secure approval, support a decision, prompt discussion) and one central message.
+2. Choose the narrative that fits: answer-first executive briefing, situation-complication-resolution, problem-solution-evidence, teaching progression, case walkthrough, investment thesis, or another clear fit.
+3. Storyboard so every slide has one job. Use insight headlines (a full sentence stating the point, at most 14 words) when the evidence supports one; use plain descriptive titles for agenda, definitions, instructions or discussion questions.
+4. Ground every claim in the sources and the brief. Never invent statistics, company facts, names, quotes, dates or brand details. If a number is not supported, write qualitative content or put "[add figure]", or label chart data "Illustrative" in the slide's source. Show the arithmetic for anything you calculate, in the source or the notes. Mark your own analytical inferences as such.
+5. Keep slides light and scannable; put explanation in speaker notes (2-4 sentences the presenter would say). Move supporting detail to appendix slides at the end when needed.
+6. Close in a way that suits the purpose: recommendation and next steps, discussion questions for a class, or a summary for an informational deck. Do not force a sales call to action.
+7. Vary layouts so the deck is not a wall of bullets; prefer stats, chart, cards, process or table whenever the content has that shape.
+
+Layouts (pick one per slide; respect the limits so text fits):
+- "title": cover. title, subtitle, author (presenter, course or date line; only if known).
+- "section": divider. title, subtitle.
+- "bullets": title, bullets (3-6, each at most 18 words), takeaway (optional one-sentence so-what).
+- "two_column": compare or contrast. title, columns: exactly 2 of {heading (max 5 words), bullets (2-5, max 14 words each)}.
+- "cards": 2-6 parallel ideas. title, items: [{heading (max 5 words), text (max 22 words)}].
+- "stats": 1-4 headline numbers. title, stats: [{value (short: "~1,200", "62%", "11-12 wks"), label (max 6 words), detail (max 14 words)}], takeaway (optional).
+- "chart": numeric evidence. title, chart: {type: "bar"|"line"|"pie"|"doughnut", categories: [labels], series: [{name, values: [plain numbers, same length as categories]}], unit (optional, e.g. "%", "hours")}, bullets (optional 1-4 insights shown beside the chart, max 14 words each), panel (optional heading for those insights), source.
+- "table": title, table: {headers: [2-6 strings], rows: [2-8 rows, each the same length as headers, cells max 8 words]}, takeaway (optional).
+- "process": steps or a timeline. title, steps: 2-6 of {label (max 4 words), detail (max 20 words), when (optional date or phase)}, takeaway (optional).
+- "quote": title, quote, attribution. Only for a real quote found in the sources.
+- "closing": final next steps, recommendations or discussion questions. title, bullets (2-6, max 22 words each).
+Every slide may also carry: notes (speaker notes) and source (short citation such as "Source: annual report p.4", or "Illustrative").
+
+Return only one JSON object and nothing else:
+{"mode":"deck","reply":"...","brief":{"audience":"...","purpose":"...","central_message":"...","narrative":"...","why":"..."},"assumptions":["..."],"theme":"boardroom|midnight|ivy|campus","deck":{"title":"...","subtitle":"...","slides":[{"layout":"title","title":"...","subtitle":"...","notes":"..."}]}}
+- reply: 2-3 plain sentences to the person about what you built and anything they should check. No markdown.
+- assumptions: up to 5 things you assumed because they were not stated (audience, length, figures to verify). Empty list if none.
+- theme: boardroom (navy, corporate), midnight (dark, modern tech), ivy (green, academic or sustainability), campus (maroon and gold, academic).
+
+Only if the request gives too little to build anything sensible (no topic and no usable file), return instead:
+{"mode":"questions","reply":"one short sentence","questions":["at most 5 short questions covering audience and decision, purpose and central message, length and delivery, sources, design"]}
+Otherwise always build the deck and list your assumptions.`;
+
+const REVISE = `The person already has a deck (current JSON below) and is asking for a change. Apply it and return the complete updated deck in the same JSON format with "mode":"deck". Keep slides the request does not touch exactly as they are. In "reply", say in 1-2 sentences what changed. If the change needs facts you do not have, make it with a clear placeholder such as "[add figure]" and say so.`;
+
+function buildPrompt(req, settings, sources, history, deck, focus){
+  let p = RULES + "\n\n";
+  if (deck) p += REVISE + "\n\n";
+  p += `Settings: slide count ${settings.count === "auto" ? "is your choice (fit the material; usually 8-14 including the cover)" : "must be exactly " + settings.count + " including the cover"}; style ${settings.theme === "auto" ? "is your choice" : CUSTOM[settings.theme] ? "is the person's own uploaded template, so any theme value you return is ignored" : 'must be "' + settings.theme + '"'}.\n\n`;
+  if (history.length) p += "Earlier in this conversation:\n" + history.slice(-8).map(h => (h.role === "user" ? "Person: " : "Deckwright: ") + h.text).join("\n") + "\n\n";
+  const texts = sources.filter(s => s.text);
+  if (texts.length){
+    const per = Math.floor((deck ? TEXT_BUDGET*0.6 : TEXT_BUDGET) / texts.length);
+    p += "Attached source material:\n" + texts.map(s => `=== FILE: ${s.name} ===\n${s.text.length > per ? s.text.slice(0, per) + "\n[... truncated ...]" : s.text}`).join("\n\n") + "\n\n";
+  }
+  const imgs = sources.filter(s => s.images.length || s.scanImgs?.length);
+  if (imgs.length) p += "Images attached with this message: " + imgs.map(s => s.name + (s.scanImgs?.length ? ` (page images 1-${s.scanImgs.length} of the PDF; use them to read charts, tables and any text the extraction missed)` : "")).join(", ") + ".\n\n";
+  if (deck) p += "Current deck JSON:\n" + JSON.stringify({theme: state.theme, deck}) + "\n\n";
+  if (focus != null) p += `The person selected slide ${focus + 1} ("${deck.slides[focus]?.title}"). Apply the request to that slide only unless it clearly says otherwise.\n\n`;
+  p += "Request from the person:\n" + (req || (sources.length ? "Build a deck from the attached material." : "(no text)"));
+  return p;
+}
+
+/* ---------- Example deck shown before the first build ---------- */
+const EXAMPLE = {title:"Halden Foods: Returning to Profitable Growth", subtitle:"Board strategy review", slides:[
+  {layout:"title",title:"Halden Foods: Returning to Profitable Growth",subtitle:"Strategy review of a direct-to-consumer meal-kit business, FY22 to FY25, with a recommended plan for FY26-27",author:"Board meeting · Fictional company, illustrative figures",notes:"Frame the session: growth has been strong, profitability has not. We will diagnose why and ask the board for one decision."},
+  {layout:"stats",title:"Revenue tripled in three years, but the business now loses money on every order",stats:[{value:"$412M",label:"FY25 revenue",detail:"3.1x FY22, growth slowing to 30% a year"},{value:"-6.8%",label:"Operating margin",detail:"down from +4.2% in FY22"},{value:"38%",label:"12-month retention",detail:"FY25 cohort, down from 54%"},{value:"$96",label:"Cost to acquire",detail:"per customer, 2.1x FY22"}],takeaway:"Growth is being bought with marketing spend that new customers no longer pay back.",source:"Illustrative data for a fictional company. Multiples: 412 / 132 = 3.1x; 96 / 45 = 2.1x.",notes:"Anchor the board on the four numbers. The headline growth hides a deteriorating customer base."},
+  {layout:"chart",title:"Top-line growth is strong but decelerating each year",chart:{type:"bar",categories:["FY22","FY23","FY24","FY25"],series:[{name:"Revenue ($M)",values:[132,214,318,412]}],unit:"$M"},bullets:["Revenue up 62%, 49%, then 30% year on year","Each extra dollar of revenue now needs more marketing","Growth alone will not close the margin gap"],panel:"What the trend shows",source:"Illustrative data. Growth: 214/132 = +62%; 318/214 = +49%; 412/318 = +30%.",notes:"Growth is real but slowing. The question is the quality of that growth."},
+  {layout:"chart",title:"Operating margin has fallen for eleven straight quarters",chart:{type:"line",categories:["Q1 FY23","Q2","Q3","Q4","Q1 FY24","Q2","Q3","Q4","Q1 FY25","Q2","Q3","Q4"],series:[{name:"Operating margin (%)",values:[4.2,3.8,3.1,2.4,1.6,0.9,-0.4,-1.8,-3.0,-4.5,-5.9,-6.8]}],unit:"%"},bullets:["Margin turned negative in Q3 FY24","Decline is steady, not a one-off shock","At this pace FY26 margin reaches about -11%"],panel:"Trend",source:"Illustrative data. FY26 extrapolates the average quarterly decline of about 1 point.",notes:"A steady slide points to structural causes rather than a bad quarter."},
+  {layout:"chart",title:"Each new customer cohort stays for a shorter time than the last",chart:{type:"line",categories:["Month 1","Month 3","Month 6","Month 9","Month 12"],series:[{name:"FY22 cohort",values:[92,78,66,59,54]},{name:"FY23 cohort",values:[90,73,60,52,47]},{name:"FY24 cohort",values:[88,69,54,46,42]},{name:"FY25 cohort",values:[86,65,49,42,38]}],unit:"%"},bullets:["Twelve-month retention fell 16 points","The gap opens by month 3, after trial discounts end","Newer customers were acquired with deeper discounts"],panel:"Cohort view",source:"Illustrative data. Share of each cohort still ordering.",notes:"This is the core of the problem: we are filling a leakier bucket every year."},
+  {layout:"chart",title:"Acquisition cost doubled while lifetime value fell by a third",chart:{type:"bar",categories:["FY22","FY23","FY24","FY25"],series:[{name:"Customer acquisition cost ($)",values:[45,62,81,96]},{name:"Customer lifetime value ($)",values:[210,188,164,141]}],unit:"$"},bullets:["Value-to-cost ratio fell from 4.7x to 1.5x","Healthy subscription businesses target 3x or more","Below 1x, growth destroys value"],panel:"Unit economics",source:"Illustrative data. Ratios: 210 / 45 = 4.7x; 141 / 96 = 1.5x. The 3x benchmark is a common rule of thumb.",notes:"Unit economics are the bridge between the cohort chart and the margin chart."},
+  {layout:"chart",title:"Paid social now takes 58% of acquisition spend, and its returns are falling",chart:{type:"doughnut",categories:["Paid social","Search","Referral","Partnerships","Other"],series:[{name:"Share of FY25 acquisition spend",values:[58,21,9,7,5]}],unit:"%"},bullets:["Paid social is the most expensive channel per retained customer","Referral customers retain best but get 9% of budget"],panel:"Channel mix",source:"Illustrative data for a fictional company.",notes:"Spend has concentrated in the channel with the weakest customers."},
+  {layout:"table",title:"Marketing and fulfilment explain almost all of the 11-point margin loss",table:{headers:["Cost line (% of revenue)","FY22","FY25","Change"],rows:[["Food and packaging","58.0","61.0","+3.0"],["Fulfilment and delivery","14.0","17.0","+3.0"],["Marketing","16.0","22.0","+6.0"],["General and admin","7.8","6.8","-1.0"],["Operating margin","4.2","-6.8","-11.0"]]},takeaway:"Marketing alone accounts for six of the eleven points lost.",source:"Illustrative data. Each year's cost lines and margin sum to 100%.",notes:"Walk down the table. Scale has helped overheads, but not the variable costs that matter."},
+  {layout:"cards",title:"Four root causes reinforce one another",items:[{heading:"Saturated paid social",text:"Rising ad prices and weaker targeting pushed acquisition cost up 2.1x."},{heading:"Discount-led sign-ups",text:"Deep first-box discounts attract trial-seekers who leave after month 3."},{heading:"Weaker cohorts",text:"Each cohort retains worse, so lifetime value falls and payback lengthens."},{heading:"Fulfilment creep",text:"More small, irregular orders raise delivery cost per box by three points."}],source:"Analytical synthesis of the preceding charts.",notes:"The causes form a loop: discounts bring weaker customers, so we spend more to replace them."},
+  {layout:"section",title:"Options and recommendation",subtitle:"Three paths for FY26-27, compared on margin, growth, risk and cash"},
+  {layout:"table",title:"Three strategic options for FY26-27",table:{headers:["Option","FY27 margin","FY27 revenue","Risk","Cash needed"],rows:[["A. Grow through it","about -2%","$560M","High","$120M"],["B. Retention-first reset","about +5%","$455M","Medium","$35M"],["C. Sell to a strategic buyer","n/a","n/a","Low, but upside lost","None"]]},takeaway:"Option B gives up some revenue to restore a profitable, self-funding model.",source:"Illustrative projections for a fictional company.",notes:"A keeps the growth story but needs heavy funding. C is the fallback if B fails."},
+  {layout:"chart",title:"Only the retention-first plan returns to positive margin by FY27",chart:{type:"line",categories:["FY25","FY26","FY27"],series:[{name:"A. Grow through it",values:[-6.8,-5.0,-2.0]},{name:"B. Retention-first reset",values:[-6.8,-0.5,5.0]}],unit:"%"},bullets:["B cuts paid social spend by 30% in FY26","Retention gains lift lifetime value back above 3x cost","A still needs outside funding in FY27"],panel:"Projected operating margin",source:"Illustrative projections. Assumes retention recovers to 50% by FY27 under Option B.",notes:"This is the decision chart. Option B accepts slower growth for a business that funds itself."},
+  {layout:"process",title:"A three-phase plan over eighteen months",steps:[{label:"Stop the bleed",detail:"Cut paid social 30%, end deep first-box discounts, pause unprofitable regions.",when:"Q1-Q2 FY26"},{label:"Fix retention",detail:"Personalised menus, flexible skip and pause, win-back offers at month 3.",when:"Q2-Q4 FY26"},{label:"Grow efficiently",detail:"Scale referral and partnerships, launch office and corporate meal plans.",when:"FY27"}],takeaway:"Targets: 50% twelve-month retention, acquisition cost below $70, positive margin by Q2 FY27.",source:"Illustrative plan.",notes:"Each phase has a gate; the board sees progress against the targets monthly."},
+  {layout:"closing",title:"Decisions requested from the board today",bullets:["Approve Option B, the retention-first reset, and its $35M funding","Set three board targets: 50% retention, acquisition cost below $70, positive margin by Q2 FY27","Agree a monthly dashboard and a decision checkpoint at the end of Q2 FY26","Keep Option C, a sale, as the fallback if targets are missed by that checkpoint"],notes:"Close with the ask. Each decision maps to the plan and the targets just shown."}
+]};
+
+
+/* ---------- Custom styles: from a PowerPoint template or an image ---------- */
+const hex2rgb = h => [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+const rgb2hex = a => a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mixHex = (a, b, t) => { const x = hex2rgb(a), y = hex2rgb(b); return rgb2hex(x.map((v, i) => v + (y[i] - v)*t)); };
+const lumHex = h => { const [r, g, b] = hex2rgb(h).map(v => { v /= 255; return v <= .03928 ? v/12.92 : Math.pow((v + .055)/1.055, 2.4); }); return .2126*r + .7152*g + .0722*b; };
+const contrastHex = (a, b) => { const x = lumHex(a), y = lumHex(b); return (Math.max(x, y) + .05)/(Math.min(x, y) + .05); };
+const readable = (fg, bg, alt) => fg && contrastHex(fg, bg) >= 3 ? fg : alt;
+const inkFor = bg => contrastHex("FFFFFF", bg) >= contrastHex("141414", bg) ? "FFFFFF" : "141414";
+async function loadImg(src){ const im = new Image(); im.src = src; await im.decode(); return im; }
+/* Downscale to a 16:9 JPEG and read its average colour and a strong accent colour. */
+async function prepImage(src){
+  const im = await loadImg(src), cv = document.createElement("canvas"), tw = 1600, th = 900;
+  cv.width = tw; cv.height = th;
+  const g = cv.getContext("2d"), sc = Math.max(tw/im.width, th/im.height), dw = im.width*sc, dh = im.height*sc;
+  g.fillStyle = "#fff"; g.fillRect(0, 0, tw, th); g.drawImage(im, (tw - dw)/2, (th - dh)/2, dw, dh);
+  const sm = document.createElement("canvas"); sm.width = 48; sm.height = 27; const sg = sm.getContext("2d"); sg.drawImage(cv, 0, 0, 48, 27);
+  const px = sg.getImageData(0, 0, 48, 27).data; let r = 0, gg = 0, b = 0, n = 0; const cols = [];
+  for (let i = 0; i < px.length; i += 4){ r += px[i]; gg += px[i+1]; b += px[i+2]; n++; const mx = Math.max(px[i], px[i+1], px[i+2]), mn = Math.min(px[i], px[i+1], px[i+2]); cols.push({hex: rgb2hex([px[i], px[i+1], px[i+2]]), sat: mx ? (mx - mn)/mx : 0, chroma: mx - mn}); }
+  const avg = rgb2hex([r/n, gg/n, b/n]);
+  cols.sort((a, c) => (c.sat*c.chroma) - (a.sat*a.chroma));
+  const vivid = cols.filter(c => c.chroma > 60).map(c => c.hex);
+  return {data: cv.toDataURL("image/jpeg", 0.85), avg, vivid};
+}
+function makeTheme(o){
+  const bg = o.bg, ink = readable(o.ink, bg, inkFor(bg));
+  const primary = readable(o.primary, bg, ink), accent = o.accent || primary;
+  const coverBg = o.coverBg || (lumHex(primary) < .2 ? primary : mixHex(primary, "000000", .35));
+  const coverInk = readable(o.coverInk, coverBg, inkFor(coverBg));
+  const onPrimary = inkFor(primary);
+  const chart = [...new Set([primary, accent, ...(o.accents || [])])].filter(c => contrastHex(c, bg) >= 1.6);
+  ["1F3A5F","E9A23B","2A9D8F","8E5BA8","D1495B","6C8EAD"].forEach(c => { if (chart.length < 6 && !chart.includes(c)) chart.push(c); });
+  return {label: o.label, custom: true, bg, ink, muted: mixHex(ink, bg, .35), primary, accent, soft: mixHex(primary, bg, .88), line: mixHex(ink, bg, .78),
+    onPrimary, headColor: readable(o.head1 || primary, bg, ink), coverBg, coverInk, coverMuted: mixHex(coverInk, coverBg, .25),
+    head: o.headFont || "Calibri", headBold: !SERIF.test(o.headFont || ""), body: o.bodyFont || "Calibri", chart: chart.slice(0, 6),
+    bgImage: o.bgImage || null, coverImage: o.coverImage || null, thumb: o.thumb || null};
+}
+const xmlOf = async (zip, path) => { const f = zip.file(path); return f ? new DOMParser().parseFromString(await f.async("string"), "application/xml") : null; };
+const resolvePart = (base, target) => { const parts = base.split("/").slice(0, -1); for (const seg of target.split("/")){ if (seg === "..") parts.pop(); else if (seg !== ".") parts.push(seg); } return parts.join("/"); };
+async function partBackground(zip, path){
+  const x = await xmlOf(zip, path); if (!x) return {};
+  const bg = x.getElementsByTagName("p:bg")[0]; if (!bg) return {};
+  const solid = bg.getElementsByTagName("a:srgbClr")[0];
+  const blip = bg.getElementsByTagName("a:blip")[0];
+  if (blip){
+    const rid = blip.getAttribute("r:embed"), rels = await xmlOf(zip, path.replace(/([^/]+)$/, "_rels/$1.rels"));
+    const rel = rels && [...rels.getElementsByTagName("Relationship")].find(r => r.getAttribute("Id") === rid);
+    if (rel){
+      const target = resolvePart(path, rel.getAttribute("Target")), file = zip.file(target), ext = (target.split(".").pop() || "").toLowerCase();
+      if (file && /^(png|jpe?g|gif|bmp|webp)$/.test(ext)) return {image: `data:image/${ext === "jpg" ? "jpeg" : ext};base64,` + await file.async("base64")};
+    }
+  }
+  return solid ? {color: solid.getAttribute("val").toUpperCase()} : {};
+}
+async function styleFromPptx(file){
+  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  const themePath = Object.keys(zip.files).filter(f => /^ppt\/theme\/theme\d+\.xml$/.test(f)).sort((a, b) => +a.match(/\d+/)[0] - +b.match(/\d+/)[0])[0];
+  const tx = themePath && await xmlOf(zip, themePath);
+  if (!tx) throw new Error("no theme");
+  const clr = tag => { const el = tx.getElementsByTagName("a:" + tag)[0]; if (!el) return null; const s = el.getElementsByTagName("a:srgbClr")[0]; if (s) return s.getAttribute("val").toUpperCase(); const y = el.getElementsByTagName("a:sysClr")[0]; return y?.getAttribute("lastClr")?.toUpperCase() || null; };
+  const font = tag => tx.getElementsByTagName("a:" + tag)[0]?.getElementsByTagName("a:latin")[0]?.getAttribute("typeface") || null;
+  const dk1 = clr("dk1") || "000000", lt1 = clr("lt1") || "FFFFFF", dk2 = clr("dk2") || dk1, accents = [1,2,3,4,5,6].map(i => clr("accent" + i)).filter(Boolean);
+  const master = await partBackground(zip, "ppt/slideMasters/slideMaster1.xml");
+  let cover = {};
+  for (const f of Object.keys(zip.files).filter(f => /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(f))){
+    const x = await xmlOf(zip, f);
+    if (x?.documentElement?.getAttribute("type") === "title"){ cover = await partBackground(zip, f); break; }
+  }
+  const bgImg = master.image ? await prepImage(master.image) : null, coverImg = cover.image ? await prepImage(cover.image) : null;
+  const bg = bgImg ? bgImg.avg : master.color || lt1;
+  const dark = lumHex(bg) < .25;
+  const t = makeTheme({label: file.name.replace(/\.(pptx|potx)$/i, ""), bg, ink: dark ? lt1 : dk1, primary: accents[0] || dk2, accent: accents[1], accents, head1: dark ? null : dk2,
+    coverBg: coverImg ? coverImg.avg : (cover.color || (dark ? bg : (lumHex(dk2) < .2 ? dk2 : null))), headFont: font("majorFont"), bodyFont: font("minorFont"),
+    bgImage: bgImg?.data, coverImage: coverImg?.data});
+  t.thumb = coverImg?.data || bgImg?.data || null;
+  return t;
+}
+async function styleFromImage(file){
+  const url = URL.createObjectURL(file);
+  try {
+    const im = await prepImage(url), dark = lumHex(im.avg) < .35;
+    const primary = im.vivid.find(c => contrastHex(c, im.avg) >= 3) || (dark ? "8FB0FF" : "1F3A5F");
+    const accent = im.vivid.find(c => c !== primary && contrastHex(c, primary) > 1.6 && contrastHex(c, im.avg) >= 2) || (dark ? "F2C14E" : "E9A23B");
+    return makeTheme({label: file.name.replace(/\.[^.]+$/, ""), bg: im.avg, primary, accent, accents: im.vivid.slice(0, 4), coverBg: im.avg, bgImage: im.data, coverImage: im.data, thumb: im.data});
+  } finally { URL.revokeObjectURL(url); }
+}
+const CKEY = "deckwright.styles.v1";
+function saveCustom(){ try { localStorage.setItem(CKEY, JSON.stringify(CUSTOM)); } catch { try { localStorage.removeItem(CKEY); } catch {} } }
+function loadCustom(){ try { Object.assign(CUSTOM, JSON.parse(localStorage.getItem(CKEY) || "{}")); } catch {} }
+function applyImageVars(el, t){
+  el.style.setProperty("--bg-img", t.bgImage ? `url("${t.bgImage}")` : "none");
+  el.style.setProperty("--cover-img", t.coverImage ? `url("${t.coverImage}")` : "none");
+}
+
+/* ---------- PDF export (vector text and shapes; charts via svg2pdf) ---------- */
+const PDF_MAP = {"−":"-","‐":"-","‑":"-","→":"->","←":"<-","≈":"~","≤":"<=","≥":">="," ":" "," ":" "," ":" ","₹":"Rs ","′":"'","″":'"',"✓":"v","✔":"v"};
+const pdfClean = s => String(s).replace(/[−‐‑→←≈≤≥   ₹′″✓✔]/g, c => PDF_MAP[c]).replace(/[^\x00-\xFF–—‘’‚“”„•…€™ŒœŠšŸŽžƒˆ˜†‡‰‹›]/g, "?");
+const pdfFont = f => SERIF.test(f) ? "times" : "helvetica";
+const pdfStyle = (b, i) => b && i ? "bolditalic" : b ? "bold" : i ? "italic" : "normal";
+function pdfText(doc, e){
+  doc.setFont(pdfFont(e.face), pdfStyle(e.bold, e.italic)); doc.setTextColor("#" + e.color);
+  const ind = IND/PT;
+  let size = e.size, lh, gap, blocks, total;
+  // Shrink with the PDF font's own metrics until the text fits its box.
+  for (;;){
+    doc.setFontSize(size); lh = size*1.2/PT; gap = size*e.gap/PT;
+    blocks = e.paras.map(p => ({p, lines: doc.splitTextToSize(pdfClean(p.t), e.w - (p.bullet ? ind : 0) - 0.01)}));
+    total = blocks.reduce((a, b) => a + b.lines.length*lh, 0) + gap*(blocks.length - 1);
+    if (total <= e.h + 0.02 || size <= 7) break;
+    size -= 0.5;
+  }
+  e = {...e, size};
+  let y = e.y + (e.valign === "middle" ? (e.h - total)/2 : e.valign === "bottom" ? e.h - total : 0);
+  const lead = (lh - e.size/PT)/2;
+  for (const b of blocks){
+    b.lines.forEach((ln, k) => {
+      if (b.p.bullet && k === 0) doc.text("•", e.x, y + lead, {baseline: "top"});
+      const x0 = e.x + (b.p.bullet ? ind : 0);
+      if (e.align === "center") doc.text(ln, e.x + e.w/2, y + lead, {baseline: "top", align: "center"});
+      else if (e.align === "right") doc.text(ln, e.x + e.w, y + lead, {baseline: "top", align: "right"});
+      else doc.text(ln, x0, y + lead, {baseline: "top"});
+      y += lh;
+    });
+    y += gap;
+  }
+}
+function pdfTable(doc, e, t){
+  const pad = 0.08, lh = e.size*1.2/PT;
+  doc.setFontSize(e.size); doc.setLineWidth(0.75/PT); doc.setDrawColor("#" + t.line);
+  const rows = [e.headers, ...e.rows];
+  let y = e.y;
+  rows.forEach((r, ri) => {
+    doc.setFont(pdfFont(t.body), ri ? "normal" : "bold");
+    const cells = r.map((c, ci) => doc.splitTextToSize(pdfClean(c), e.colW[ci] - 2*pad));
+    const rh = Math.max(...cells.map(c => c.length))*lh + 2*pad;
+    let x = e.x;
+    cells.forEach((lines, ci) => {
+      doc.setFillColor("#" + (ri === 0 ? t.primary : ri % 2 === 0 ? t.soft : t.bg));
+      doc.rect(x, y, e.colW[ci], rh, "FD");
+      doc.setTextColor("#" + (ri === 0 ? t.onPrimary : t.ink));
+      const ty = y + (rh - lines.length*lh)/2 + (lh - e.size/PT)/2;
+      lines.forEach((ln, k) => doc.text(ln, x + pad, ty + k*lh, {baseline: "top"}));
+      x += e.colW[ci];
+    });
+    y += rh;
+  });
+}
+async function buildPdf(deck, key){
+  const t = themeOf(key), {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation: "landscape", unit: "in", format: [W, H], compress: true});
+  doc.setProperties({title: deck.title, creator: "Deckwright"});
+  const host = document.createElement("div");
+  host.style.cssText = "position:absolute;left:-10000px;top:0;width:0;height:0;overflow:hidden";
+  document.body.appendChild(host);
+  try {
+    const n = deck.slides.length;
+    for (let i = 0; i < n; i++){
+      if (i) doc.addPage([W, H], "landscape");
+      const s = deck.slides[i], els = layoutSlide(s, t, i, n);
+      doc.setFillColor("#" + els.bg); doc.rect(0, 0, W, H, "F");
+      if (els.img) doc.addImage(els.img, "JPEG", 0, 0, W, H, els.imgKind, "FAST");
+      for (const e of els){
+        if (e.k === "rect"){
+          doc.setFillColor("#" + e.fill);
+          if (e.shape === "ellipse") doc.ellipse(e.x + e.w/2, e.y + e.h/2, e.w/2, e.h/2, "F");
+          else if (e.shape === "arrow"){ doc.rect(e.x, e.y + e.h*0.3, e.w*0.6, e.h*0.4, "F"); doc.triangle(e.x + e.w*0.6, e.y, e.x + e.w, e.y + e.h/2, e.x + e.w*0.6, e.y + e.h, "F"); }
+          else doc.rect(e.x, e.y, e.w, e.h, "F");
+        } else if (e.k === "text") pdfText(doc, e);
+        else if (e.k === "table") pdfTable(doc, e, t);
+        else if (e.k === "chart"){
+          host.innerHTML = chartSVG(e.chart, t, e.w, e.h).replace(/font-family='[^']*'/, "font-family='helvetica'");
+          await svg2pdf.svg2pdf(host.firstElementChild, doc, {x: e.x, y: e.y, width: e.w, height: e.h});
+        }
+      }
+    }
+  } finally { host.remove(); }
+  return doc.output("blob");
+}
+
+/* ---------- State ---------- */
+const state = {deck: normDeck(EXAMPLE), theme: "boardroom", example: true, msgs: [], history: [], sources: [], focus: null, busy: false,
+  count: "auto", themePick: "auto", depth: "default", versions: [], vi: 0};
+const KEY = "deckwright.v2";
+function save(){ try { localStorage.setItem(KEY, JSON.stringify({deck: state.deck, theme: state.theme, example: state.example, msgs: state.msgs.slice(-40), history: state.history.slice(-12), count: state.count, themePick: state.themePick, depth: state.depth, versions: state.versions.slice(-8), vi: state.vi})); } catch {} }
+function load(){ try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && s.deck){ const ok = k => THEMES[k] || CUSTOM[k]; Object.assign(state, {deck: normDeck(s.deck), theme: ok(s.theme) ? s.theme : "boardroom", example: !!s.example, msgs: s.msgs || [], history: s.history || [], count: s.count || "auto", themePick: ok(s.themePick) || s.themePick === "auto" ? s.themePick || "auto" : "auto", depth: s.depth || "default", versions: (s.versions || []).map(v => ({...v, deck: normDeck(v.deck), theme: ok(v.theme) ? v.theme : "boardroom"})), vi: s.vi || 0}); } } catch {} }
+
+let sample = null, downloads = null, imgLimits = null;
+
+/* ---------- Settings (segmented controls) ---------- */
+const SEGS = {
+  segCount: {name: "count", items: [["auto","Auto"],["5","5"],["8","8"],["10","10"],["12","12"],["15","15"],["20","20"]]},
+  segTheme: {name: "themePick", items: [["auto","Let Claude pick"], ...Object.entries(THEMES).map(([k, t]) => [k, t.label, t])]},
+  segDepth: {name: "depth", items: [["default","Standard"],["complex","Thorough (slower)"]]}
+};
+const FB_AREAS = ["Content", "Storyline", "Tone", "Visuals and layout", "Length", "Accuracy"];
+function renderSegs(){
+  SEGS.segTheme.items = [["auto","Let Claude pick"], ...Object.entries(THEMES).map(([k, t]) => [k, t.label, t]), ...Object.entries(CUSTOM).map(([k, t]) => [k, t.label, t])];
+  $("fbAreas").innerHTML = FB_AREAS.map(a => `<label><input type="checkbox" name="fbArea" value="${a}"><span>${a}</span></label>`).join("");
+  for (const [id, cfg] of Object.entries(SEGS)){
+    $(id).innerHTML = cfg.items.map(([v, label, th]) => `<label><input type="radio" name="${cfg.name}" value="${esc(v)}" ${state[cfg.name] === v ? "checked" : ""}><span>${th?.custom ? `<b class="custom-sw" style="background-color:#${th.coverBg};${th.thumb ? `background-image:url('${th.thumb}')` : ""}"></b>` : th ? `<i style="background:linear-gradient(135deg,#${th.coverBg} 55%,#${th.accent} 55%)"></i>` : ""}${esc(label)}${th?.custom ? `<button type="button" class="rm" data-rm-style="${esc(v)}" aria-label="Remove ${esc(label)} style">&times;</button>` : ""}</span></label>`).join("")
+      + (id === "segTheme" ? `<button type="button" class="upload-style" id="uploadStyleBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Upload your style</button>` : "");
+  }
+}
+
+/* ---------- Examples rail ---------- */
+const STARTERS = [
+  ["Class case", "A 10-slide case discussion deck for an MBA operations class, based on the attached caselet. Cover the context, the core problem with evidence, options, and end with four discussion questions."],
+  ["Investor pitch", "A 10-minute pitch deck for a campus food-waste startup aimed at seed investors: problem, solution, market size, business model, traction, team and the ask."],
+  ["Teaching", "Teach first-year undergraduates the basics of supply and demand in 8 slides, with one everyday example per concept and a short recap quiz at the end."],
+  ["Board update", "A quarterly update for the board from the attached report: headline results, what went well, risks, and three decisions we need from them. Keep it to 8 slides."]
+];
+function renderSampleDeck(){
+  const d = normDeck(EXAMPLE), t = THEMES.boardroom;
+  $("sampleTitle").textContent = d.title;
+  $("sampleSlides").innerHTML = d.slides.map((s, i) => `<div class="card"><div class="num"><span>Slide <em>${i + 1}</em></span><span>${s.layout.replace("_", " ")}</span></div><div class="sw-wrap" style="cursor:default">${renderEls(layoutSlide(s, t, i, d.slides.length), t)}</div>${s.notes ? `<details><summary>Speaker notes</summary><p>${esc(s.notes)}</p></details>` : ""}</div>`).join("");
+}
+let lastFocus = null;
+function openSamples(tab){
+  const sh = $("samples");
+  if (sh.hidden){ lastFocus = document.activeElement; sh.hidden = false; document.body.style.overflow = "hidden"; sh.scrollTop = 0; }
+  ["req","deck"].forEach(k => { $("tab-" + k).setAttribute("aria-selected", String(k === tab)); $("pane-" + k).hidden = k !== tab; });
+  if (tab === "deck") renderSampleDeck();
+  scaleAll();
+  $("tab-" + tab).focus();
+}
+function closeSamples(){ $("samples").hidden = true; document.body.style.overflow = ""; lastFocus?.focus?.(); }
+function renderExamples(){
+  $("exList").innerHTML = STARTERS.map(([kind, text], k) => `<li><button type="button" data-starter="${k}"><span class="ex-kind">Example · ${esc(kind)}</span><span class="ex-text">${esc(text)}</span><span class="ex-use">Use this example →</span></button></li>`).join("");
+}
+
+/* ---------- Files ---------- */
+const typeOf = n => { const e = (n.split(".").pop() || "").toLowerCase(); return {jpeg:"JPG",htm:"HTML",markdown:"MD"}[e] || e.toUpperCase().slice(0, 4) || "FILE"; };
+const kb = b => b > 1e6 ? (b/1e6).toFixed(1) + " MB" : Math.max(1, Math.round(b/1e3)) + " KB";
+function renderFiles(){
+  $("srcRow").innerHTML = state.sources.map((s, k) => {
+    const status = s.reading ? "Reading..." : s.failed ? (s.note === "too large" ? "Too large to read" : "Couldn't read this file") : s.images.length ? (imgLimits ? "Image, Claude will look at it" : "Images can't be sent from this view") : `${kb(s.size || 0)} · ${s.text.length.toLocaleString()} characters read${s.scanImgs?.length ? ` · ${s.scanImgs.length} page images` : ""}`;
+    return `<li class="file ${s.failed ? "warn" : ""}"><span class="ftype">${esc(typeOf(s.name))}</span><span class="fname"><b title="${esc(s.name)}">${esc(s.name)}</b><small>${status}</small></span><button type="button" data-rm="${k}" aria-label="Remove ${esc(s.name)}">&times;</button></li>`;
+  }).join("");
+}
+
+/* ---------- Assistant ---------- */
+function msgHTML(m){
+  if (m.role === "user") return `<div class="msg user"><span class="who">You</span>${m.text ? `<div class="body">${esc(m.text)}</div>` : ""}${m.files?.length ? `<div class="files">${m.files.map(f => `<span class="pill">${esc(f)}</span>`).join("")}</div>` : ""}</div>`;
+  let h = `<div class="msg ${m.err ? "err" : "bot"}"><span class="who">Deckwright</span><div class="body">${esc(m.text)}</div>`;
+  if (m.questions?.length) h += `<ol class="qs">${m.questions.map(q => `<li>${esc(q)}</li>`).join("")}</ol><div><button class="btn" type="button" data-act="defaults">Build it with sensible defaults</button></div>`;
+  if (m.brief){
+    const b = m.brief;
+    h += `<details class="brief"><summary>How I framed it</summary><dl>` +
+      [["Audience", b.audience], ["Purpose", b.purpose], ["Central message", b.central_message], ["Narrative", [b.narrative, b.why].filter(Boolean).join(". ")]].filter(r => r[1]).map(r => `<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join("") + `</dl>` +
+      (m.assumptions?.length ? `<div style="margin-top:8px;color:var(--muted)">Assumptions to check</div><ul>${m.assumptions.map(a => `<li>${esc(a)}</li>`).join("")}</ul>` : "") + `</details>`;
+  }
+  return h + "</div>";
+}
+function renderLog(){
+  const intro = state.example
+    ? "I'm building your deck from the form above. Once it is ready, ask me for changes here, or click a slide to change just that one."
+    : "Tell me what to improve below. Each round of feedback creates a new version, and you can switch back to earlier versions above the slides. Click a slide first to change only that slide.";
+  let h = `<div class="msg bot"><span class="who">Deckwright</span><div class="body">${esc(intro)}</div></div>` + state.msgs.map(msgHTML).join("");
+  if (state.busy) h += `<div class="msg bot"><span class="who">Deckwright</span><div class="progress"><span class="dot"></span><span id="progText">${esc(state.progress || "Thinking...")}</span></div></div>`;
+  const log = $("log"); log.innerHTML = h; log.scrollTop = log.scrollHeight;
+  $("focusRow").innerHTML = state.focus != null && !state.example ? `<span class="chip">Changing slide ${state.focus + 1} only<button type="button" data-unfocus aria-label="Clear slide selection">&times;</button></span>` : "";
+}
+
+/* ---------- Slides ---------- */
+function renderSlides(){
+  const d = state.deck, t = themeOf(state.theme);
+  applyImageVars($("slides"), t);
+  $("deck").hidden = state.example && !state.msgs.length && !state.busy;
+  ["dlGroup","swatches","versions"].forEach(id => $(id).hidden = state.example);
+  if (state.example){
+    $("deckEyebrow").textContent = "Your deck"; $("deckTitle").textContent = state.busy ? "Writing your deck..." : "Your deck";
+    $("deckMeta").textContent = state.busy ? "Slides appear here when they are ready." : "Answer the assistant's questions, or let it fill the gaps, to build your slides.";
+    $("slides").innerHTML = `<div class="empty-slides"><h3>${state.busy ? "Writing your slides" : "No slides yet"}</h3><p>${state.busy ? "Follow progress in the assistant panel." : "The assistant needs a little more to go on."}</p></div>`;
+    return;
+  }
+  $("deckEyebrow").innerHTML = state.example ? `<span class="tag">Example output</span>` : "Your deck";
+  $("deckTitle").textContent = d.title;
+  $("deckMeta").textContent = `${d.slides.length} slides \u00b7 16:9 \u00b7 ${t.label} style${t.custom ? " (yours)" : ""}${state.versions.length > 1 ? ` \u00b7 version ${state.vi + 1} of ${state.versions.length}` : ""}`;
+  $("swatches").innerHTML = [...Object.entries(THEMES), ...Object.entries(CUSTOM)].map(([k, th]) => `<button type="button" class="sw" data-theme-key="${esc(k)}" aria-pressed="${k === state.theme}" title="${esc(th.label)} style" aria-label="${esc(th.label)} style" style="background-color:#${th.coverBg};${th.thumb ? `background-image:url('${th.thumb}')` : ""}">${th.thumb ? "" : `<span style="background:#${th.accent}"></span>`}</button>`).join("");
+  $("versions").innerHTML = state.versions.length > 1 ? `<span class="vl">Versions</span>` + state.versions.map((v, i) => `<button type="button" class="vbtn" data-version="${i}" aria-pressed="${i === state.vi}" title="${esc(v.note || "")}">v${i + 1}${i === 0 ? " · first draft" : ""}</button>`).join("") : "";
+  $("slides").innerHTML = d.slides.map((s, i) => `<div class="card"><div class="num"><span>Slide <em>${i + 1}</em></span><span>${s.layout.replace("_", " ")}</span></div>
+    <div class="sw-wrap ${state.focus === i ? "sel" : ""}" data-slide="${i}" role="button" tabindex="0" aria-label="Slide ${i + 1}: ${esc(s.title)}. Select to change only this slide">${renderEls(layoutSlide(s, t, i, d.slides.length), t)}</div>
+    ${s.notes ? `<details><summary>Speaker notes</summary><p>${esc(s.notes)}</p></details>` : ""}</div>`).join("");
+  scaleAll();
+}
+const ro = new ResizeObserver(es => es.forEach(e => { const c = e.target.firstElementChild; if (c) c.style.transform = `scale(${e.contentRect.width / 960})`; }));
+function scaleAll(){ ro.disconnect(); document.querySelectorAll(".sw-wrap").forEach(w => { ro.observe(w); w.firstElementChild.style.transform = `scale(${w.clientWidth / 960})`; }); }
+function notice(text, kind){ const n = $("notice"); n.hidden = !text; n.className = "notice " + (kind || ""); n.textContent = text || ""; }
+
+
+/* ---------- Actions ---------- */
+async function addFiles(list){
+  for (const f of list){
+    if (f.size > 40e6){ state.sources.push({name: f.name, size: f.size, text: "", images: [], failed: true, note: "too large"}); renderFiles(); continue; }
+    const entry = {name: f.name, size: f.size, text: "", images: [], reading: true};
+    state.sources.push(entry); renderFiles();
+    Object.assign(entry, await readFile(f), {reading: false});
+    if ((entry.scan || entry.pages <= 8) && entry.pdf && imgLimits) entry.scanImgs = await pdfPagesToImages(entry.pdf, Math.min(imgLimits.maxCount || 5, 6)).catch(() => []);
+    delete entry.scan; delete entry.pdf;
+    renderFiles();
+  }
+}
+const ERR = {
+  not_granted: "Claude wasn't given permission to run from this page. Reload and choose Allow when asked.",
+  rate_limited: "Too many requests at once. Wait a minute, then try again.",
+  prompt_too_large: "The attached files are too long to send in one go. Remove one or attach a shorter extract.",
+  invalid_json: "The reply came back in a shape I couldn't read. Try again; if it repeats, ask for fewer slides.",
+  refused: "Claude declined this request. Try rewording it.",
+  sampling_disabled: "Claude isn't available from pages in this account.",
+  session_expired: "Your claude.ai session expired. Reload the page and sign in.",
+  image_rejected: "One of the images couldn't be used. Remove it and try again.",
+  images_unavailable: "Images can't be sent from this view, so remove them or describe them in text."
+};
+let ctl = null;
+function setBusy(on){
+  state.busy = on;
+  const b = $("sendBtn");
+  b.disabled = on; b.innerHTML = on ? `<span class="spin" aria-hidden="true"></span>Generating...` : "Generate deck";
+  $("refineBtn").disabled = on; $("stopBtn").hidden = !on;
+}
+/* mode "new": build a fresh deck from the form. mode "refine": continue the conversation (revise the deck, or answer questions). */
+async function send(text, mode, label){
+  if (state.busy) return;
+  if (!sample){ notice("Generating needs Claude, which is only reachable when this page is open in claude.ai. You can still explore the example and download it.", "bad"); return; }
+  if (state.sources.some(s => s.reading)){ notice("Still reading your files. Try again in a moment."); return; }
+  const req = (text ?? "").trim();
+  if (mode === "new" && !req && !state.sources.length){ $("prompt").focus(); notice("Describe the deck or attach a file first.", "bad"); return; }
+  if (mode === "refine" && !req && !label){ $("refineIn").focus(); return; }
+  notice("");
+  const hasDeck = !state.example && state.msgs.some(m => m.built);
+  if (mode === "new"){ state.msgs = []; state.history = []; state.focus = null; state.sources.forEach(s => s.sent = false); }
+  const revising = mode === "refine" && hasDeck;
+  const focus = revising ? state.focus : null;
+  const settings = {count: state.count, theme: state.themePick};
+  const newFiles = state.sources.filter(s => !s.sent).map(s => s.name);
+  state.msgs.push({role: "user", text: label || req, files: newFiles});
+  state.sources.forEach(s => s.sent = true);
+  const prompt = buildPrompt(req || label, settings, state.sources, state.history, revising ? state.deck : null, focus);
+  state.history.push({role: "user", text: req || label || "Build a deck from the attached files."});
+  state.progress = revising ? "Working on your change..." : "Reading and framing the story...";
+  setBusy(true); renderLog(); renderSlides();
+  if (mode === "refine") $("refineIn").value = "";
+  $("deck").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"});
+  const images = imgLimits ? state.sources.flatMap(s => [...s.images, ...(s.scanImgs || [])]).slice(0, imgLimits.maxCount || 5) : [];
+  ctl = new AbortController();
+  try {
+    const out = await sample.json(prompt, {
+      modelTier: state.depth, cache: false, signal: ctl.signal, ...(images.length ? {images} : {}),
+      onText: ({text}) => {
+        const n = (text.match(/"layout"\s*:/g) || []).length, titles = [...text.matchAll(/"title"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+        const last = titles.length ? titles[titles.length - 1][1].replace(/\\"/g, '"') : "";
+        state.progress = n ? `Writing slide ${n}${last ? ": " + last : ""}` : "Planning the storyline...";
+        const el = $("progText"); if (el) el.textContent = state.progress;
+      }
+    });
+    if (out?.mode === "questions" && Array.isArray(out.questions) && out.questions.length){
+      state.msgs.push({role: "bot", text: (str(out.reply, 400) || "A few questions before I build:") + " Answer below, or let me fill the gaps.", questions: out.questions.slice(0, 5).map(q => str(q, 300))});
+      state.history.push({role: "bot", text: "Asked: " + out.questions.join(" | ")});
+    } else {
+      const deck = normDeck(out);
+      if (!deck.slides.length) throw {code: "invalid_json"};
+      state.deck = deck; state.example = false; state.focus = null;
+      if (settings.theme !== "auto") state.theme = settings.theme; else if (THEMES[out?.theme] && !revising) state.theme = out.theme;
+      if (!revising) state.versions = [];
+      state.versions.push({deck, theme: state.theme, note: revising ? (label || req).slice(0, 140) : "First draft"});
+      state.vi = state.versions.length - 1;
+      const reply = str(out?.reply, 600) || `Built ${deck.slides.length} slides.`;
+      state.msgs.push({role: "bot", text: reply, built: true, brief: revising ? null : out?.brief, assumptions: revising ? null : arr(out?.assumptions, 5).map(a => str(a, 240))});
+      state.history.push({role: "bot", text: reply});
+      notice(""); renderSlides();
+    }
+  } catch (e) {
+    if (e?.code === "cancelled") state.msgs.push({role: "bot", text: "Stopped. Nothing was changed.", err: true});
+    else state.msgs.push({role: "bot", text: ERR[e?.code] || "Something went wrong while writing the deck. Try again.", err: true});
+  } finally {
+    ctl = null; setBusy(false); renderLog(); renderSlides(); save();
+  }
+}
+const fileBase = deck => deck.title.replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "_").slice(0, 60) || "deck";
+async function download(kind, btn, sampleDeck){
+  btn = btn || (kind === "pdf" ? $("dlPdf") : $("dlBtn"));
+  const span = btn.querySelector("span"), label = span.textContent;
+  const deck = sampleDeck || state.deck, theme = sampleDeck ? "boardroom" : state.theme;
+  if (!downloads){ if (sampleDeck) span.textContent = "Open in claude.ai to download"; else notice("Downloading needs this page to be open in claude.ai.", "bad"); return; }
+  btn.disabled = true; span.textContent = "Preparing...";
+  try {
+    const blob = kind === "pdf" ? await buildPdf(deck, theme) : await buildPptx(deck, theme);
+    const filename = fileBase(deck) + (kind === "pdf" ? ".pdf" : ".pptx");
+    const r = await downloads.save({filename, data: blob});
+    const msg = r?.status === "saved" ? `Saved ${filename}.` : `${filename} is ready.`;
+    if (sampleDeck) span.textContent = label, btn.title = msg; else notice(msg, "good");
+  } catch (e) {
+    console.warn(e);
+    if (!sampleDeck) notice(e?.code === "declined" ? "Download cancelled." : "The file couldn't be created" + (e?.message ? ": " + e.message : "."), e?.code === "declined" ? "" : "bad");
+  } finally { btn.disabled = false; span.textContent = label; }
+}
+
+/* ---------- Wiring ---------- */
+$("composer").addEventListener("submit", e => { e.preventDefault(); send($("prompt").value, "new"); });
+function sendFeedback(){
+  const areas = [...document.querySelectorAll('input[name="fbArea"]:checked')].map(x => x.value), text = $("refineIn").value.trim();
+  if (!areas.length && !text){ $("refineIn").focus(); return; }
+  const hasDeck = !state.example && state.msgs.some(m => m.built);
+  const full = (areas.length ? `Feedback on: ${areas.join(", ")}. ` : "") + (text || "Improve these areas.");
+  send(hasDeck ? full + " Create a revised version of the deck that addresses this feedback." : full, "refine", full);
+  document.querySelectorAll('input[name="fbArea"]').forEach(x => x.checked = false);
+}
+$("refine").addEventListener("submit", e => { e.preventDefault(); sendFeedback(); });
+$("prompt").addEventListener("input", () => { const n = $("prompt").value.length; $("charCount").textContent = `${n.toLocaleString()} character${n === 1 ? "" : "s"}`; });
+$("prompt").addEventListener("keydown", e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); send($("prompt").value, "new"); } });
+$("refineIn").addEventListener("keydown", e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); sendFeedback(); } });
+async function addStyle(file){
+  const help = $("styleHelp"), old = help.textContent;
+  help.textContent = `Reading ${file.name}...`;
+  try {
+    const t = /\.(pptx|potx)$/i.test(file.name) ? await styleFromPptx(file) : await styleFromImage(file);
+    const id = "custom-" + Date.now().toString(36);
+    CUSTOM[id] = t; saveCustom();
+    state.themePick = id; if (!state.example) state.theme = id;
+    renderSegs(); renderSlides(); save();
+    help.textContent = `Added "${t.label}". It is selected for your next deck${state.example ? "" : " and applied to the current one"}.`;
+  } catch (err) {
+    console.warn(err);
+    help.textContent = /\.(pptx|potx)$/i.test(file.name) ? "That PowerPoint file couldn't be read as a template. Try saving it again as .pptx or .potx." : "That image couldn't be read. Try a PNG or JPG.";
+    setTimeout(() => help.textContent = old, 6000);
+  }
+}
+$("styleIn").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) addStyle(f); });
+$("stopBtn").addEventListener("click", () => ctl?.abort());
+$("dlBtn").addEventListener("click", () => download("pptx"));
+$("dlPdf").addEventListener("click", () => download("pdf"));
+$("fileIn").addEventListener("change", e => { addFiles([...e.target.files]); e.target.value = ""; });
+$("drop").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); $("fileIn").click(); } });
+document.addEventListener("change", e => { const r = e.target; if (r.type === "radio" && r.name in state){ state[r.name] = r.value; if (r.name === "themePick" && r.value !== "auto" && !state.example){ state.theme = r.value; if (state.versions[state.vi]) state.versions[state.vi].theme = r.value; renderSlides(); } save(); } });
+$("newBtn").addEventListener("click", () => {
+  if (state.busy) return;
+  Object.assign(state, {deck: normDeck(EXAMPLE), example: true, msgs: [], history: [], sources: [], focus: null, theme: "boardroom", versions: [], vi: 0});
+  $("prompt").value = ""; $("charCount").textContent = "0 characters";
+  renderAll(); save(); window.scrollTo({top: 0});
+});
+const drop = $("drop");
+["dragenter","dragover"].forEach(ev => document.addEventListener(ev, e => { if (e.dataTransfer?.types?.includes("Files")){ e.preventDefault(); drop.classList.add("drag"); } }));
+["dragleave","drop"].forEach(ev => document.addEventListener(ev, e => { if (ev === "drop" || !e.relatedTarget) drop.classList.remove("drag"); }));
+document.addEventListener("drop", e => { if (e.dataTransfer?.files?.length){ e.preventDefault(); addFiles([...e.dataTransfer.files]); } });
+document.addEventListener("click", e => {
+  const el = e.target.closest("#uploadStyleBtn,[data-rm-style],[data-version],[data-rm],[data-unfocus],[data-starter],[data-act],[data-theme-key],[data-slide],[data-open],[data-tab],[data-sample-dl]");
+  if (!el) return;
+  if (el.id === "uploadStyleBtn"){ $("styleIn").click(); return; }
+  if (el.dataset.rmStyle){ e.preventDefault(); const k = el.dataset.rmStyle; delete CUSTOM[k]; saveCustom(); if (state.themePick === k) state.themePick = "auto"; if (state.theme === k) state.theme = "boardroom"; state.versions.forEach(v => { if (v.theme === k) v.theme = "boardroom"; }); renderSegs(); renderSlides(); save(); return; }
+  if (el.dataset.version != null){ const v = state.versions[+el.dataset.version]; if (v){ state.vi = +el.dataset.version; state.deck = v.deck; state.theme = v.theme; state.focus = null; renderSlides(); renderLog(); save(); } return; }
+  if (el.dataset.open){ openSamples(el.dataset.open); return; }
+  if (el.dataset.tab){ openSamples(el.dataset.tab); return; }
+  if (el.dataset.sampleDl){ download(el.dataset.sampleDl, el, normDeck(EXAMPLE)); return; }
+  if (el.dataset.rm != null){ state.sources.splice(+el.dataset.rm, 1); renderFiles(); }
+  else if (el.hasAttribute("data-unfocus")){ state.focus = null; renderLog(); renderSlides(); }
+  else if (el.dataset.starter != null){ const p = $("prompt"); p.value = STARTERS[+el.dataset.starter][1]; p.dispatchEvent(new Event("input")); closeSamples(); p.focus(); p.scrollIntoView({block: "center"}); }
+  else if (el.dataset.act === "defaults") send("Go ahead and build it now with sensible, clearly labelled assumptions.", "refine", "Build it with sensible defaults");
+  else if (el.dataset.themeKey){ state.theme = el.dataset.themeKey; if (state.versions[state.vi]) state.versions[state.vi].theme = state.theme; renderSlides(); save(); }
+  else if (el.dataset.slide != null){
+    if (state.example){ notice("This is an example. Generate your own deck, then click a slide to change just that one.", "ex"); return; }
+    const i = +el.dataset.slide; state.focus = state.focus === i ? null : i; renderSlides(); renderLog();
+    if (state.focus != null){ $("refineIn").placeholder = `What should change on slide ${i + 1}?`; $("refineIn").focus({preventScroll: true}); }
+    else $("refineIn").placeholder = "For example: add a slide comparing the three options, or make the titles shorter";
+  }
+});
+$("closeSamples").addEventListener("click", closeSamples);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("samples").hidden) closeSamples(); });
+$("samples").addEventListener("keydown", e => { if (e.target.getAttribute("role") === "tab" && /Arrow(Left|Right)/.test(e.key)) openSamples(e.target.dataset.tab === "req" ? "deck" : "req"); });
+document.addEventListener("keydown", e => { const el = e.target.closest?.("[data-slide]"); if (el && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); el.click(); } });
+
+function renderAll(){ renderSegs(); renderExamples(); renderFiles(); renderLog(); renderSlides(); }
+loadCustom();
+load();
+renderAll();
+if (location.hash === "#samples" || location.hash === "#sample-deck") openSamples(location.hash === "#samples" ? "req" : "deck");
+if (document.fonts?.ready) document.fonts.ready.then(() => renderSlides());
+
+(async () => {
+  if (!window.claude?.use){ notice("Open this page in claude.ai to generate and download decks. The example below still previews here."); return; }
+  const [s, d] = await Promise.all([claude.use("sample"), claude.use("downloads")]);
+  sample = s; downloads = d;
+  if (sample) imgLimits = (await sample.limits().catch(() => null))?.images || null;
+  if (!sample){ notice("Claude isn't available in this view, so new decks can't be generated here. You can still preview and download the example.", "bad"); $("ctaNote").textContent = "Open this page in claude.ai to generate decks."; }
+  if (!imgLimits) $("fileHint").textContent = "PDF, Word, PowerPoint, Excel, CSV or text, up to 40 MB each";
+  renderFiles();
+})();
+window.__deckwright = {state, CUSTOM, addStyle, buildPptx, buildPdf, normDeck, layoutSlide, THEMES, readFile, renderSlides};
+})();
+</script>
+
+</body></html>
