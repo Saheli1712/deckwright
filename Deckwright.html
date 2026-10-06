@@ -291,7 +291,7 @@ footer{border-top:1px solid var(--line);padding-block:22px;color:var(--muted);fo
           </div>
         </div>
         <div class="cta-row">
-          <p class="fine" id="ctaNote">Claude writes the deck using your Claude account. It usually takes under a minute.</p>
+          <p class="fine" id="ctaNote">Claude generates the deck with your Anthropic API account. API usage may incur charges.</p>
           <button class="btn primary lg" id="sendBtn" type="submit">Generate deck</button>
         </div>
       </form>
@@ -1027,7 +1027,7 @@ const KEY = "deckwright.v2";
 function save(){ try { localStorage.setItem(KEY, JSON.stringify({deck: state.deck, theme: state.theme, example: state.example, msgs: state.msgs.slice(-40), history: state.history.slice(-12), count: state.count, themePick: state.themePick, depth: state.depth, versions: state.versions.slice(-8), vi: state.vi})); } catch {} }
 function load(){ try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && s.deck){ const ok = k => THEMES[k] || CUSTOM[k]; Object.assign(state, {deck: normDeck(s.deck), theme: ok(s.theme) ? s.theme : "boardroom", example: !!s.example, msgs: s.msgs || [], history: s.history || [], count: s.count || "auto", themePick: ok(s.themePick) || s.themePick === "auto" ? s.themePick || "auto" : "auto", depth: s.depth || "default", versions: (s.versions || []).map(v => ({...v, deck: normDeck(v.deck), theme: ok(v.theme) ? v.theme : "boardroom"})), vi: s.vi || 0}); } } catch {} }
 
-let sample = null, downloads = null, imgLimits = null;
+let imgLimits = {maxCount: 5};
 
 /* ---------- Settings (segmented controls) ---------- */
 const SEGS = {
@@ -1161,10 +1161,32 @@ function setBusy(on){
   b.disabled = on; b.innerHTML = on ? `<span class="spin" aria-hidden="true"></span>Generating...` : "Generate deck";
   $("refineBtn").disabled = on; $("stopBtn").hidden = !on;
 }
+async function imageForApi(file){
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1568 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const dataUrl = canvas.toDataURL("image/jpeg", .78);
+  return {mediaType: "image/jpeg", data: dataUrl.slice(dataUrl.indexOf(",") + 1)};
+}
+async function generateDeck(prompt, options){
+  const images = await Promise.all((options.images || []).map(imageForApi));
+  const response = await fetch("/api/generate", {
+    method: "POST",
+    headers: {"content-type": "application/json"},
+    body: JSON.stringify({prompt, depth: options.modelTier, images}),
+    signal: options.signal
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || "Deck generation failed. Please try again.");
+  return payload;
+}
 /* mode "new": build a fresh deck from the form. mode "refine": continue the conversation (revise the deck, or answer questions). */
 async function send(text, mode, label){
   if (state.busy) return;
-  if (!sample){ notice("Generating needs Claude, which is only reachable when this page is open in claude.ai. You can still explore the example and download it.", "bad"); return; }
   if (state.sources.some(s => s.reading)){ notice("Still reading your files. Try again in a moment."); return; }
   const req = (text ?? "").trim();
   if (mode === "new" && !req && !state.sources.length){ $("prompt").focus(); notice("Describe the deck or attach a file first.", "bad"); return; }
@@ -1184,10 +1206,10 @@ async function send(text, mode, label){
   setBusy(true); renderLog(); renderSlides();
   if (mode === "refine") $("refineIn").value = "";
   $("deck").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"});
-  const images = imgLimits ? state.sources.flatMap(s => [...s.images, ...(s.scanImgs || [])]).slice(0, imgLimits.maxCount || 5) : [];
+  const images = state.sources.flatMap(s => [...s.images, ...(s.scanImgs || [])]).slice(0, imgLimits.maxCount);
   ctl = new AbortController();
   try {
-    const out = await sample.json(prompt, {
+    const out = await generateDeck(prompt, {
       modelTier: state.depth, cache: false, signal: ctl.signal, ...(images.length ? {images} : {}),
       onText: ({text}) => {
         const n = (text.match(/"layout"\s*:/g) || []).length, titles = [...text.matchAll(/"title"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
@@ -1213,8 +1235,8 @@ async function send(text, mode, label){
       notice(""); renderSlides();
     }
   } catch (e) {
-    if (e?.code === "cancelled") state.msgs.push({role: "bot", text: "Stopped. Nothing was changed.", err: true});
-    else state.msgs.push({role: "bot", text: ERR[e?.code] || "Something went wrong while writing the deck. Try again.", err: true});
+    if (e?.code === "cancelled" || e?.name === "AbortError") state.msgs.push({role: "bot", text: "Stopped. Nothing was changed.", err: true});
+    else state.msgs.push({role: "bot", text: e?.message || ERR[e?.code] || "Something went wrong while writing the deck. Try again.", err: true});
   } finally {
     ctl = null; setBusy(false); renderLog(); renderSlides(); save();
   }
@@ -1224,13 +1246,16 @@ async function download(kind, btn, sampleDeck){
   btn = btn || (kind === "pdf" ? $("dlPdf") : $("dlBtn"));
   const span = btn.querySelector("span"), label = span.textContent;
   const deck = sampleDeck || state.deck, theme = sampleDeck ? "boardroom" : state.theme;
-  if (!downloads){ if (sampleDeck) span.textContent = "Open in claude.ai to download"; else notice("Downloading needs this page to be open in claude.ai.", "bad"); return; }
   btn.disabled = true; span.textContent = "Preparing...";
   try {
     const blob = kind === "pdf" ? await buildPdf(deck, theme) : await buildPptx(deck, theme);
     const filename = fileBase(deck) + (kind === "pdf" ? ".pdf" : ".pptx");
-    const r = await downloads.save({filename, data: blob});
-    const msg = r?.status === "saved" ? `Saved ${filename}.` : `${filename} is ready.`;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url; link.download = filename; link.hidden = true;
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const msg = `${filename} is ready.`;
     if (sampleDeck) span.textContent = label, btn.title = msg; else notice(msg, "good");
   } catch (e) {
     console.warn(e);
@@ -1318,15 +1343,7 @@ renderAll();
 if (location.hash === "#samples" || location.hash === "#sample-deck") openSamples(location.hash === "#samples" ? "req" : "deck");
 if (document.fonts?.ready) document.fonts.ready.then(() => renderSlides());
 
-(async () => {
-  if (!window.claude?.use){ notice("Open this page in claude.ai to generate and download decks. The example below still previews here."); return; }
-  const [s, d] = await Promise.all([claude.use("sample"), claude.use("downloads")]);
-  sample = s; downloads = d;
-  if (sample) imgLimits = (await sample.limits().catch(() => null))?.images || null;
-  if (!sample){ notice("Claude isn't available in this view, so new decks can't be generated here. You can still preview and download the example.", "bad"); $("ctaNote").textContent = "Open this page in claude.ai to generate decks."; }
-  if (!imgLimits) $("fileHint").textContent = "PDF, Word, PowerPoint, Excel, CSV or text, up to 40 MB each";
-  renderFiles();
-})();
+renderFiles();
 window.__deckwright = {state, CUSTOM, addStyle, buildPptx, buildPdf, normDeck, layoutSlide, THEMES, readFile, renderSlides};
 })();
 </script>
