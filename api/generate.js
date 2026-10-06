@@ -13,7 +13,7 @@ module.exports = async function handler(req, res) {
     return respond(res, 405, { error: "Use POST to generate a deck." });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
     return respond(res, 503, { error: "Deck generation is not configured yet. Add ANTHROPIC_API_KEY to the Vercel project." });
   }
@@ -74,11 +74,17 @@ module.exports = async function handler(req, res) {
     const result = await upstream.json().catch(() => ({}));
 
     if (!upstream.ok) {
+      const providerError = result.error?.type || "unknown_error";
+      console.error("Anthropic API request failed", {
+        status: upstream.status,
+        type: providerError,
+        requestId: upstream.headers.get("request-id")
+      });
       const status = upstream.status === 429 ? 429 : upstream.status === 529 ? 503 : 502;
       const error = upstream.status === 401
-        ? "Anthropic did not accept this key. Use an API key from your Anthropic Console, not a Claude.ai login or subscription token."
+        ? `Anthropic returned ${providerError}. Confirm this is an API key from the Anthropic Console, then re-enter it without quotes or surrounding spaces.`
         : upstream.status === 403
-          ? "This Anthropic account or workspace is not allowed to use the API. Check API billing, credits, and project access in the Anthropic Console."
+          ? `Anthropic returned ${providerError}. Check API billing, credits, key permissions, and project access in the Anthropic Console.`
           : upstream.status === 429
           ? "The Claude API rate limit was reached. Wait a moment and try again."
           : "Claude could not complete this request. Try again in a moment.";
