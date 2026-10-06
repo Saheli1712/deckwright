@@ -75,9 +75,11 @@ module.exports = async function handler(req, res) {
 
     if (!upstream.ok) {
       const status = upstream.status === 429 ? 429 : upstream.status === 529 ? 503 : 502;
-      const error = upstream.status === 401 || upstream.status === 403
-        ? "Anthropic rejected the API key or account. Check the ANTHROPIC_API_KEY setting and API access."
-        : upstream.status === 429
+      const error = upstream.status === 401
+        ? "Anthropic did not accept this key. Use an API key from your Anthropic Console, not a Claude.ai login or subscription token."
+        : upstream.status === 403
+          ? "This Anthropic account or workspace is not allowed to use the API. Check API billing, credits, and project access in the Anthropic Console."
+          : upstream.status === 429
           ? "The Claude API rate limit was reached. Wait a moment and try again."
           : "Claude could not complete this request. Try again in a moment.";
       return respond(res, status, { error });
